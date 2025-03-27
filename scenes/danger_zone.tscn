@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://b7cr67yx3f0dl"]
+
+[ext_resource type="Script" uid="uid://bjkypc213fm85" path="res://scripts/danger_zone.gd" id="1_41ndt"]
+
+[node name="DangerZone" type="Area2D"]
+collision_layer = 8
+script = ExtResource("1_41ndt")
+
+[node name="Timer" type="Timer" parent="."]
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
