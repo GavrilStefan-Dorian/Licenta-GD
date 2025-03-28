@@ -8,5 +8,5 @@ func _ready() -> void:
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	print("Enemy at %s, Collision at %s" % [$Enemy.position, $Enemy/CollisionShape2D.position])
+	# print("Enemy at %s, Collision at %s" % [$Enemy.position, $Enemy/CollisionShape2D.position])
 	pass

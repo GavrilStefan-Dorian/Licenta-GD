@@ -1,6 +1,7 @@
-[gd_scene load_steps=17 format=3 uid="uid://dtt2pyuepyg1n"]
+[gd_scene load_steps=18 format=3 uid="uid://dtt2pyuepyg1n"]
 
 [ext_resource type="Texture2D" uid="uid://dw40jna4kcsyd" path="res://assets/player/idle_3.png" id="1_8e3ao"]
+[ext_resource type="Script" uid="uid://bjni01ogat37h" path="res://scripts/enemy.gd" id="1_38ino"]
 [ext_resource type="PackedScene" uid="uid://b7cr67yx3f0dl" path="res://scenes/danger_zone.tscn" id="2_38ino"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_tjssy"]
@@ -102,21 +103,25 @@ height = 102.0
 [node name="Enemy" type="CharacterBody2D"]
 collision_layer = 4
 collision_mask = 3
+script = ExtResource("1_38ino")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(10, -55)
 scale = Vector2(0.48, 0.48)
 sprite_frames = SubResource("SpriteFrames_pb0yv")
+flip_h = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(16, -61)
+scale = Vector2(-1.73323, 1.42672)
+shape = SubResource("CapsuleShape2D_a3pup")
 
 [node name="DangerZone" parent="." instance=ExtResource("2_38ino")]
 position = Vector2(0, -48)
+collision_layer = 0
+collision_mask = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DangerZone"]
-position = Vector2(5, -13)
-scale = Vector2(1.1, 1.1)
-shape = SubResource("CapsuleShape2D_a3pup")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(5, -61)
-scale = Vector2(1.1, 1.1)
+position = Vector2(16, -13)
+scale = Vector2(1.70654, 1.42089)
 shape = SubResource("CapsuleShape2D_a3pup")

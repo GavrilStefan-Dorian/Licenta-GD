@@ -1,8 +1,8 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
-addons/
-assets/background/
-assets/player/
 craftpix-net-563568-free-wraith-tiny-style-2d-sprites/
 craftpix-net-889507-free-vampires-locations-battle-background-pack/
+assets/background
+assets/player
+addons/

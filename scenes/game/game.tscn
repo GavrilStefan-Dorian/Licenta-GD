@@ -1,10 +1,9 @@
-[gd_scene load_steps=8 format=3 uid="uid://bmgdfkjolc4bs"]
+[gd_scene load_steps=7 format=3 uid="uid://bmgdfkjolc4bs"]
 
 [ext_resource type="Script" uid="uid://hi8js4go4m7q" path="res://scripts/game.gd" id="1_0sr1o"]
 [ext_resource type="PackedScene" uid="uid://benxux6yu5bkf" path="res://scenes/players/player.tscn" id="1_sul5r"]
 [ext_resource type="Texture2D" uid="uid://bffbg2d2bq4ur" path="res://assets/background/4/dead forest.png" id="2_7h61r"]
 [ext_resource type="PackedScene" uid="uid://dtt2pyuepyg1n" path="res://scenes/enemies/enemy.tscn" id="4_kelw5"]
-[ext_resource type="Script" uid="uid://dhncpby8llorg" path="res://scenes/enemies/enemy.gd" id="5_lfrn8"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0sr1o"]
 texture = ExtResource("2_7h61r")
@@ -14,8 +13,8 @@ texture_region_size = Vector2i(3840, 2160)
 
 [sub_resource type="TileSet" id="TileSet_kelw5"]
 tile_size = Vector2i(350, 200)
-physics_layer_0/collision_layer = 2
-physics_layer_0/collision_mask = 5
+physics_layer_0/collision_layer = 1
+physics_layer_0/collision_mask = 0
 sources/0 = SubResource("TileSetAtlasSource_0sr1o")
 
 [node name="Game" type="Node2D"]
@@ -23,7 +22,7 @@ script = ExtResource("1_0sr1o")
 
 [node name="Layer0" type="TileMapLayer" parent="."]
 use_parent_material = true
-position = Vector2(-2854, -2557)
+position = Vector2(-2853, -2557)
 scale = Vector2(0.3, 0.3)
 tile_map_data = PackedByteArray(0, 0, 32, 0, 37, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 tile_set = SubResource("TileSet_kelw5")
@@ -33,9 +32,7 @@ position = Vector2(11370, 7490)
 zoom = Vector2(1.03, 1.03)
 
 [node name="Player" parent="." instance=ExtResource("1_sul5r")]
-position = Vector2(166, -165)
-collision_mask = 3
+position = Vector2(166, -149)
 
 [node name="Enemy" parent="." instance=ExtResource("4_kelw5")]
-position = Vector2(925, -165)
-script = ExtResource("5_lfrn8")
+position = Vector2(904, -150)
