@@ -181,7 +181,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_j4nxn")
 }],
 "loop": true,
-"name": &"walking\'",
+"name": &"walking",
 "speed": 24.0
 }]
 
@@ -191,14 +191,13 @@ height = 102.0
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
-collision_mask = 5
 script = ExtResource("1_kc87p")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(10, -55)
 scale = Vector2(0.48, 0.48)
 sprite_frames = SubResource("SpriteFrames_x7p2l")
-animation = &"idle"
+animation = &"walking"
 autoplay = "idle"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

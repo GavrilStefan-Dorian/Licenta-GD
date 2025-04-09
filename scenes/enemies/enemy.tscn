@@ -93,10 +93,10 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 5.0
+"speed": 24.0
 }]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_a3pup"]
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_38ino"]
 radius = 30.0
 height = 102.0
 
@@ -109,19 +109,22 @@ script = ExtResource("1_38ino")
 position = Vector2(10, -55)
 scale = Vector2(0.48, 0.48)
 sprite_frames = SubResource("SpriteFrames_pb0yv")
+autoplay = "default"
+frame_progress = 0.899334
 flip_h = true
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(16, -61)
-scale = Vector2(-1.73323, 1.42672)
-shape = SubResource("CapsuleShape2D_a3pup")
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
+position = Vector2(14, -69)
+scale = Vector2(1.427, 1.427)
+shape = SubResource("CapsuleShape2D_38ino")
 
 [node name="DangerZone" parent="." instance=ExtResource("2_38ino")]
-position = Vector2(0, -48)
+position = Vector2(72, -48)
 collision_layer = 0
 collision_mask = 2
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DangerZone"]
-position = Vector2(16, -13)
-scale = Vector2(1.70654, 1.42089)
-shape = SubResource("CapsuleShape2D_a3pup")
+[node name="CollisionShape2D2" type="CollisionShape2D" parent="DangerZone"]
+position = Vector2(-58, -21)
+scale = Vector2(1.41294, 1.43028)
+shape = SubResource("CapsuleShape2D_38ino")
+disabled = true
