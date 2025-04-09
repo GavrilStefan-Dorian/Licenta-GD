@@ -17,9 +17,7 @@ func player_invulnerable_timer():
 
 var player_pos: Vector2
 
-
 signal stat_change_enemy
-
 var enemy_vulnerable: bool = true
 var enemy_health = 100:
 	set(value):
@@ -34,3 +32,9 @@ func enemy_invulnerable_timer():
 	enemy_vulnerable = true
 
 var enemy_pos: Vector2
+
+func reset_game_state():
+	player_health = 100
+	enemy_health = 100
+	player_vulnerable = true
+	enemy_vulnerable = true

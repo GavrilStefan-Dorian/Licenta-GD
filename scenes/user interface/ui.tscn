@@ -28,7 +28,7 @@ theme_override_constants/margin_top = 35
 [node name="PlayerHealth" type="TextureProgressBar" parent="MarginContainer"]
 custom_minimum_size = Vector2(300, 30)
 layout_mode = 2
-value = 50.0
+value = 100.0
 texture_under = ExtResource("1_yp1a8")
 texture_progress = ExtResource("3_x14l5")
 
@@ -45,5 +45,6 @@ theme_override_constants/margin_right = 150
 [node name="EnemyHealth" type="TextureProgressBar" parent="MarginContainer2"]
 custom_minimum_size = Vector2(300, 30)
 layout_mode = 2
+value = 100.0
 texture_under = ExtResource("1_yp1a8")
 texture_progress = ExtResource("3_x14l5")
