@@ -1,10 +1,11 @@
-[gd_scene load_steps=8 format=3 uid="uid://bmgdfkjolc4bs"]
+[gd_scene load_steps=9 format=3 uid="uid://bmgdfkjolc4bs"]
 
 [ext_resource type="Script" uid="uid://hi8js4go4m7q" path="res://scripts/game.gd" id="1_0sr1o"]
 [ext_resource type="PackedScene" uid="uid://benxux6yu5bkf" path="res://scenes/players/player.tscn" id="1_sul5r"]
 [ext_resource type="Texture2D" uid="uid://bffbg2d2bq4ur" path="res://assets/background/4/dead forest.png" id="2_7h61r"]
 [ext_resource type="PackedScene" uid="uid://dtt2pyuepyg1n" path="res://scenes/enemies/enemy.tscn" id="4_kelw5"]
 [ext_resource type="PackedScene" uid="uid://bklxr58f3524s" path="res://scenes/user interface/pause_menu.tscn" id="5_lfrn8"]
+[ext_resource type="PackedScene" uid="uid://4g7m3gjb6cy0" path="res://scenes/user interface/ui.tscn" id="6_5i0tg"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0sr1o"]
 texture = ExtResource("2_7h61r")
@@ -37,5 +38,7 @@ position = Vector2(181, 480)
 
 [node name="Enemy" parent="." instance=ExtResource("4_kelw5")]
 position = Vector2(932, 480)
+
+[node name="UI" parent="." instance=ExtResource("6_5i0tg")]
 
 [node name="UI_PauseMenu" parent="." instance=ExtResource("5_lfrn8")]
