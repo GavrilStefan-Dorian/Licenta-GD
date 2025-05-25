@@ -1,13 +1,29 @@
 extends Node2D
-
+var player: Player
+var enemy: Enemy
 
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
+	player = $Player
+	enemy = $Enemy
 	if Globals:
 		Globals.reset_game_state()
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	# print("Enemy at %s, Collision at %s" % [$Enemy.position, $Enemy/CollisionShape2D.position])
-	pass
+	if not is_instance_valid(player) or not is_instance_valid(enemy):
+		return
+	
+	if enemy.global_position.x < player.global_position.x:
+		player.facing_direction = -1
+	else:
+			player.facing_direction = 1
+
+	if player.global_position.x < enemy.global_position.x:
+		enemy.facing_direction = -1
+	else:
+		enemy.facing_direction = 1
+	
+	player.animated_sprite.flip_h = player.facing_direction < 0
+	enemy.animated_sprite.flip_h = enemy.facing_direction < 0

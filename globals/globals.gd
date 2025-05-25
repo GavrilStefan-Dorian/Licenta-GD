@@ -19,7 +19,7 @@ var player_pos: Vector2
 
 signal stat_change_enemy
 var enemy_vulnerable: bool = true
-var enemy_health = 100:
+var enemy_health = 20:
 	set(value):
 		if enemy_vulnerable:
 			enemy_health = value
@@ -35,6 +35,26 @@ var enemy_pos: Vector2
 
 func reset_game_state():
 	player_health = 100
+	enemy_health = 20
+	player_vulnerable = true
+	enemy_vulnerable = true
+	
+var player_wins := 0
+var enemy_wins := 0
+var current_round := 1
+const MAX_ROUNDS := 3
+
+signal round_ended(winner)  # "player" or "enemy"
+signal match_ended(winner)  # "player" or "enemy"
+
+func reset_round_state():
+	player_health = 100
 	enemy_health = 100
 	player_vulnerable = true
 	enemy_vulnerable = true
+
+func reset_match_state():
+	player_wins = 0
+	enemy_wins = 0
+	current_round = 1
+	reset_round_state()
