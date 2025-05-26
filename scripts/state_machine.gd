@@ -8,6 +8,8 @@ class_name StateMachine extends Node
 
 
 func _ready() -> void:
+	await get_tree().process_frame
+	
 	for state_node: State in find_children("*", "State"):
 		state_node.finished.connect(_transition_to_next_state)
 

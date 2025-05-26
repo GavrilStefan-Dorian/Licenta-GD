@@ -13,7 +13,6 @@ func physics_update(delta: float) -> void:
 		enemy.velocity.x = move_toward(input_direction_x, 0, enemy.SPEED)
 	enemy.velocity += enemy.get_gravity() * delta
 	
-	enemy.velocity += enemy.get_gravity() * delta
 	enemy.move_and_slide()
 	
 	if Input.is_action_just_pressed("jump_enemy"):

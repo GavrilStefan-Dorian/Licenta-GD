@@ -13,7 +13,6 @@ func physics_update(delta: float) -> void:
 		player.velocity.x = move_toward(input_direction_x, 0, player.SPEED)
 	player.velocity += player.get_gravity() * delta
 	
-	player.velocity += player.get_gravity() * delta
 	player.move_and_slide()
 	
 	if Input.is_action_just_pressed("jump"):

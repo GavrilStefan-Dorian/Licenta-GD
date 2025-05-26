@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://bevfrqejo0d1c"]
+[gd_scene load_steps=10 format=3 uid="uid://bevfrqejo0d1c"]
 
 [ext_resource type="Script" uid="uid://bvso6p0gubf4e" path="res://scripts/state_machine.gd" id="1_rde8t"]
 [ext_resource type="Script" uid="uid://d1w55wlb8ckq5" path="res://scripts/states/idle.gd" id="2_b2bvo"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" uid="uid://bsjkmn6gtw5pr" path="res://scripts/states/guard.gd" id="6_s1vyc"]
 [ext_resource type="Script" uid="uid://da3s7452ecs1s" path="res://scripts/states/dashing.gd" id="7_2vi5h"]
 [ext_resource type="Script" uid="uid://cfqcf6u0rmi2q" path="res://scripts/states/grapple.gd" id="8_1l77g"]
+[ext_resource type="Script" uid="uid://13uppwu1ef0" path="res://scripts/states/knockback.gd" id="9_b2bvo"]
 
 [node name="StateMachine" type="Node"]
 script = ExtResource("1_rde8t")
@@ -40,3 +41,7 @@ metadata/_custom_type_script = "uid://da3s7452ecs1s"
 [node name="Grapple" type="Node" parent="."]
 script = ExtResource("8_1l77g")
 metadata/_custom_type_script = "uid://cfqcf6u0rmi2q"
+
+[node name="Knockback" type="Node" parent="."]
+script = ExtResource("9_b2bvo")
+metadata/_custom_type_script = "uid://13uppwu1ef0"

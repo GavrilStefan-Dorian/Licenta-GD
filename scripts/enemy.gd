@@ -36,7 +36,7 @@ func _on_anim_finished(anim_name: String):
 	# Handle animation completions if needed
 	pass
 #
-func _on_Hitbox_area_entered(area: Area2D):
+func _on_Hitbox_area_entered(area: Area2D):	
 	if area == null:
 		return
 	if not area.is_in_group("hurtboxes"):
@@ -45,13 +45,14 @@ func _on_Hitbox_area_entered(area: Area2D):
 	var enemy = hurtbox.owner
 	if enemy and enemy.has_method("take_damage") and attack_timer > 0 and current_attack_damage > 0:
 		enemy.take_damage(current_attack_damage)
-		enemy.apply_knockback(current_attack_knockback * facing_direction)
+		enemy.apply_knockback(Vector2(current_attack_knockback.x * facing_direction, current_attack_knockback.y))
 		# Prevent multi-hit per swing
 		current_attack_damage = 0
 
 	
 func take_damage(amount: int) -> void:
-	print(amount)
+	if is_invincible or is_guarding:
+		return
 	Globals.enemy_health -= amount
 	if Globals.enemy_health <= 0:
 		Globals.player_wins += 1
@@ -62,8 +63,15 @@ func take_damage(amount: int) -> void:
 		queue_free()
 			
 func apply_knockback(knockback_force: Vector2) -> void:
-	velocity.x = knockback_force.x
-	velocity.y = knockback_force.y
+	if is_invincible or is_guarding:
+		return
+	if get_node_or_null("StateMachine"):
+		get_node("StateMachine")._transition_to_next_state("KnockbackEnemy", {
+			"knockback_velocity": knockback_force
+		})
+	else:
+		velocity = knockback_force  # Fallback
+
 	
 #func apply_force(force:Vector2, lift: float = 0) -> void:
 	#velocity.x = force.x

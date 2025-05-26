@@ -45,19 +45,21 @@ func _on_match_end_timer_timeout():
 	Globals.reset_match_state()
 
 func respawn_players():
-	print("Player spawn position: ", player_spawn.position)
-	
 	for node in get_tree().get_nodes_in_group("players"):
 		node.queue_free()
 	
-	var player = player_scene.instantiate()
-	var enemy = enemy_scene.instantiate()
+	var player = await spawn_character(player_scene, player_spawn.position)
+	var enemy = await spawn_character(enemy_scene, enemy_spawn.position)
 	
-	player.position = player_spawn.position
-	enemy.position = enemy_spawn.position
-	
-	get_tree().current_scene.add_child(player)
-	get_tree().current_scene.add_child(enemy)
+	await get_tree().process_frame # wait for _readys()
 
+func spawn_character(scene: PackedScene, position: Vector2) -> Node2D:
+	await get_tree().process_frame # wait for queue_frees
+	var inst = scene.instantiate()
+	inst.position = position
+	get_tree().current_scene.add_child(inst)
+	await get_tree().process_frame # wait for _readys()
+	return inst
+	
 func show_message(text):
 	print(text)  

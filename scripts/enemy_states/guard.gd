@@ -2,7 +2,7 @@ class_name GuardEnemy
 extends EnemyState
 
 func enter(previous_state_path: String, data := {}) -> void:
-	enemy.animation_player.play("guard")  # Or guard animation
+	enemy.animation_player.play("guard") 
 	enemy.is_guarding = true
 	enemy.is_invincible = true
 

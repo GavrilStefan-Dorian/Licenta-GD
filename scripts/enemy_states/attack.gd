@@ -15,7 +15,7 @@ var ATTACK_PRESETS = {
 	},
 	"heavy_blow": {
 		"damage": 10,
-		"knockback": Vector2(1000, -100),
+		"knockback": Vector2(300, -100),
 		"duration": 0.5,
 		"movement_factor": 0.1, 	
 		"enemy_lift": 0

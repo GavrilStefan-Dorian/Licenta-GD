@@ -15,7 +15,7 @@ var ATTACK_PRESETS = {
 	},
 	"heavy_blow": {
 		"damage": 10,
-		"knockback": Vector2(1000, -100),
+		"knockback": Vector2(300, -100),
 		"duration": 0.5,
 		"movement_factor": 0.1, 	
 		"enemy_lift": 0
@@ -45,8 +45,6 @@ func enter(previous_state_path: String, data := {}) -> void:
 
 	# Momentum
 	player.velocity.x = player.SPEED * attack_data.movement_factor * player.facing_direction
-
-
 
 func physics_update(delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left", "move_right")
