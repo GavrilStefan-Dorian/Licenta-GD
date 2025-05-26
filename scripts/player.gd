@@ -52,15 +52,18 @@ func _on_Hitbox_area_entered(area: Area2D):
 	
 func take_damage(amount: int) -> void:
 	print(amount)
-	Globals.enemy_health -= amount
-	if Globals.enemy_health <= 0:
-		Globals.player_wins += 1
+	Globals.player_health -= amount
+	if Globals.player_health <= 0:
+		Globals.enemy_wins += 1
 		if Globals.player_wins >= ceil(Globals.MAX_ROUNDS / 2.0):
 			Globals.emit_signal("match_ended", "player")
 		else:
 			Globals.emit_signal("round_ended", "player")
-		queue_free()
-		
+		queue_free()		
+
+func apply_knockback(knockback_force: Vector2) -> void:
+	velocity.x = knockback_force.x
+	velocity.y = knockback_force.y
 #
 #enum PlayerState { IDLE, WALKING, ATTACKING, GUARDING, DASHING, CASTING, GRABBING }
 #var current_state := PlayerState.IDLE

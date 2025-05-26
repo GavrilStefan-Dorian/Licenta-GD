@@ -1,0 +1,42 @@
+[gd_scene load_steps=9 format=3 uid="uid://doosyre2cbgpj"]
+
+[ext_resource type="Script" uid="uid://bvso6p0gubf4e" path="res://scripts/state_machine.gd" id="1_u0lyp"]
+[ext_resource type="Script" uid="uid://3tsfijtd8b7r" path="res://scripts/enemy_states/idle.gd" id="2_e5vo0"]
+[ext_resource type="Script" uid="uid://dhypfpcgump7t" path="res://scripts/enemy_states/attack.gd" id="3_y386e"]
+[ext_resource type="Script" uid="uid://b0k36p43gerag" path="res://scripts/enemy_states/air.gd" id="4_vu0t2"]
+[ext_resource type="Script" uid="uid://cu2u6h6iun0ok" path="res://scripts/enemy_states/walking.gd" id="5_3mvfd"]
+[ext_resource type="Script" uid="uid://cj2rbnwcds11l" path="res://scripts/enemy_states/guard.gd" id="6_v4xlp"]
+[ext_resource type="Script" uid="uid://o8p3l03oheas" path="res://scripts/enemy_states/dashing.gd" id="7_x1v3r"]
+[ext_resource type="Script" uid="uid://c8slutw0yeaf1" path="res://scripts/enemy_states/grapple.gd" id="8_sla80"]
+
+[node name="StateMachine" type="Node"]
+script = ExtResource("1_u0lyp")
+metadata/_custom_type_script = "uid://bvso6p0gubf4e"
+
+[node name="IdleEnemy" type="Node" parent="."]
+script = ExtResource("2_e5vo0")
+metadata/_custom_type_script = "uid://3tsfijtd8b7r"
+
+[node name="AttackEnemy" type="Node" parent="."]
+script = ExtResource("3_y386e")
+metadata/_custom_type_script = "uid://dhypfpcgump7t"
+
+[node name="AirEnemy" type="Node" parent="."]
+script = ExtResource("4_vu0t2")
+metadata/_custom_type_script = "uid://b0k36p43gerag"
+
+[node name="WalkingEnemy" type="Node" parent="."]
+script = ExtResource("5_3mvfd")
+metadata/_custom_type_script = "uid://cu2u6h6iun0ok"
+
+[node name="GuardEnemy" type="Node" parent="."]
+script = ExtResource("6_v4xlp")
+metadata/_custom_type_script = "uid://cj2rbnwcds11l"
+
+[node name="DashingEnemy" type="Node" parent="."]
+script = ExtResource("7_x1v3r")
+metadata/_custom_type_script = "uid://o8p3l03oheas"
+
+[node name="GrappleEnemy" type="Node" parent="."]
+script = ExtResource("8_sla80")
+metadata/_custom_type_script = "uid://c8slutw0yeaf1"

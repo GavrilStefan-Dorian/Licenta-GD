@@ -1,0 +1,42 @@
+[gd_scene load_steps=9 format=3 uid="uid://bevfrqejo0d1c"]
+
+[ext_resource type="Script" uid="uid://bvso6p0gubf4e" path="res://scripts/state_machine.gd" id="1_rde8t"]
+[ext_resource type="Script" uid="uid://d1w55wlb8ckq5" path="res://scripts/states/idle.gd" id="2_b2bvo"]
+[ext_resource type="Script" uid="uid://behuprpxffshm" path="res://scripts/states/attack.gd" id="3_fdl5g"]
+[ext_resource type="Script" uid="uid://djt4uts5fh7p2" path="res://scripts/states/air.gd" id="4_2dx1k"]
+[ext_resource type="Script" uid="uid://cokqlbpl4uvhg" path="res://scripts/states/walking.gd" id="5_dhuc5"]
+[ext_resource type="Script" uid="uid://bsjkmn6gtw5pr" path="res://scripts/states/guard.gd" id="6_s1vyc"]
+[ext_resource type="Script" uid="uid://da3s7452ecs1s" path="res://scripts/states/dashing.gd" id="7_2vi5h"]
+[ext_resource type="Script" uid="uid://cfqcf6u0rmi2q" path="res://scripts/states/grapple.gd" id="8_1l77g"]
+
+[node name="StateMachine" type="Node"]
+script = ExtResource("1_rde8t")
+metadata/_custom_type_script = "uid://bvso6p0gubf4e"
+
+[node name="Idle" type="Node" parent="."]
+script = ExtResource("2_b2bvo")
+metadata/_custom_type_script = "uid://d1w55wlb8ckq5"
+
+[node name="Attack" type="Node" parent="."]
+script = ExtResource("3_fdl5g")
+metadata/_custom_type_script = "uid://behuprpxffshm"
+
+[node name="Air" type="Node" parent="."]
+script = ExtResource("4_2dx1k")
+metadata/_custom_type_script = "uid://djt4uts5fh7p2"
+
+[node name="Walking" type="Node" parent="."]
+script = ExtResource("5_dhuc5")
+metadata/_custom_type_script = "uid://cokqlbpl4uvhg"
+
+[node name="Guard" type="Node" parent="."]
+script = ExtResource("6_s1vyc")
+metadata/_custom_type_script = "uid://bsjkmn6gtw5pr"
+
+[node name="Dashing" type="Node" parent="."]
+script = ExtResource("7_2vi5h")
+metadata/_custom_type_script = "uid://da3s7452ecs1s"
+
+[node name="Grapple" type="Node" parent="."]
+script = ExtResource("8_1l77g")
+metadata/_custom_type_script = "uid://cfqcf6u0rmi2q"

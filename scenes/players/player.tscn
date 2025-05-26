@@ -1,4 +1,4 @@
-[gd_scene load_steps=115 format=3 uid="uid://benxux6yu5bkf"]
+[gd_scene load_steps=108 format=3 uid="uid://benxux6yu5bkf"]
 
 [ext_resource type="Script" uid="uid://cafclrnbji6ug" path="res://scripts/player.gd" id="1_kc87p"]
 [ext_resource type="Texture2D" uid="uid://cvkh3qrj8s8s" path="res://assets/player/idle.png" id="2_edvpf"]
@@ -10,14 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://d3vauhpqg7vam" path="res://assets/player/taunt.png" id="5_yl2j2"]
 [ext_resource type="Script" uid="uid://c1ge0j6pfud22" path="res://scripts/hurtbox.gd" id="6_sguum"]
 [ext_resource type="Texture2D" uid="uid://bb8imixh16vb8" path="res://assets/effects/HitSpark.png" id="10_fsrjl"]
-[ext_resource type="Script" uid="uid://bvso6p0gubf4e" path="res://scripts/state_machine.gd" id="11_fsrjl"]
-[ext_resource type="Script" uid="uid://d1w55wlb8ckq5" path="res://scripts/states/idle.gd" id="12_vjh8g"]
-[ext_resource type="Script" uid="uid://behuprpxffshm" path="res://scripts/states/attack.gd" id="13_f1232"]
-[ext_resource type="Script" uid="uid://djt4uts5fh7p2" path="res://scripts/states/air.gd" id="14_v7vuu"]
-[ext_resource type="Script" uid="uid://cokqlbpl4uvhg" path="res://scripts/states/walking.gd" id="15_bdc4e"]
-[ext_resource type="Script" uid="uid://bsjkmn6gtw5pr" path="res://scripts/states/guard.gd" id="16_bdc4e"]
-[ext_resource type="Script" uid="uid://da3s7452ecs1s" path="res://scripts/states/dashing.gd" id="17_qb7t6"]
-[ext_resource type="Script" uid="uid://cfqcf6u0rmi2q" path="res://scripts/states/grapple.gd" id="18_ufgnv"]
+[ext_resource type="PackedScene" uid="uid://bevfrqejo0d1c" path="res://scenes/state_machines/state_machine_player.tscn" id="11_fsrjl"]
 
 [sub_resource type="Animation" id="Animation_phaeh"]
 length = 0.001
@@ -56,6 +49,33 @@ tracks/2/keys = {
 "transitions": PackedFloat32Array(1),
 "update": 1,
 "values": [true]
+}
+
+[sub_resource type="Animation" id="Animation_bdc4e"]
+resource_name = "guard"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimatedSprite2D:animation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [&"guard"]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("AnimatedSprite2D:frame")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.0333333, 0.0666667, 0.1, 0.133333, 0.166667, 0.2, 0.233333, 0.266667, 0.3, 0.333333, 0.366667, 0.4, 0.433333, 0.466667, 0.5, 0.533333, 0.566667),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 1,
+"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 }
 
 [sub_resource type="Animation" id="Animation_olb2f"]
@@ -180,33 +200,6 @@ tracks/1/keys = {
 "transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
 "update": 1,
 "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
-}
-
-[sub_resource type="Animation" id="Animation_bdc4e"]
-resource_name = "guard"
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("AnimatedSprite2D:animation")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [&"guard"]
-}
-tracks/1/type = "value"
-tracks/1/imported = false
-tracks/1/enabled = true
-tracks/1/path = NodePath("AnimatedSprite2D:frame")
-tracks/1/interp = 1
-tracks/1/loop_wrap = true
-tracks/1/keys = {
-"times": PackedFloat32Array(0, 0.0333333, 0.0666667, 0.1, 0.133333, 0.166667, 0.2, 0.233333, 0.266667, 0.3, 0.333333, 0.366667, 0.4, 0.433333, 0.466667, 0.5, 0.533333, 0.566667),
-"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
-"update": 1,
-"values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_phaeh"]
@@ -923,34 +916,4 @@ sub_emitter = NodePath(".")
 texture = ExtResource("10_fsrjl")
 process_material = SubResource("ParticleProcessMaterial_es4m5")
 
-[node name="StateMachine" type="Node" parent="."]
-script = ExtResource("11_fsrjl")
-metadata/_custom_type_script = "uid://bvso6p0gubf4e"
-
-[node name="Idle" type="Node" parent="StateMachine"]
-script = ExtResource("12_vjh8g")
-metadata/_custom_type_script = "uid://d1w55wlb8ckq5"
-
-[node name="Attack" type="Node" parent="StateMachine"]
-script = ExtResource("13_f1232")
-metadata/_custom_type_script = "uid://behuprpxffshm"
-
-[node name="Air" type="Node" parent="StateMachine"]
-script = ExtResource("14_v7vuu")
-metadata/_custom_type_script = "uid://djt4uts5fh7p2"
-
-[node name="Walking" type="Node" parent="StateMachine"]
-script = ExtResource("15_bdc4e")
-metadata/_custom_type_script = "uid://cokqlbpl4uvhg"
-
-[node name="Guard" type="Node" parent="StateMachine"]
-script = ExtResource("16_bdc4e")
-metadata/_custom_type_script = "uid://bsjkmn6gtw5pr"
-
-[node name="Dashing" type="Node" parent="StateMachine"]
-script = ExtResource("17_qb7t6")
-metadata/_custom_type_script = "uid://da3s7452ecs1s"
-
-[node name="Grapple" type="Node" parent="StateMachine"]
-script = ExtResource("18_ufgnv")
-metadata/_custom_type_script = "uid://cfqcf6u0rmi2q"
+[node name="StateMachine" parent="." instance=ExtResource("11_fsrjl")]
