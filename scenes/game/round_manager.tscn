@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://c2ysrtdq4s3nx"]
+[gd_scene load_steps=5 format=3 uid="uid://c2ysrtdq4s3nx"]
 
 [ext_resource type="Script" uid="uid://w5m1r1im7pym" path="res://scripts/game_state/round_manager.gd" id="1_8mv0p"]
 [ext_resource type="PackedScene" uid="uid://benxux6yu5bkf" path="res://scenes/players/player.tscn" id="2_2im5g"]
 [ext_resource type="PackedScene" uid="uid://dtt2pyuepyg1n" path="res://scenes/enemies/enemy.tscn" id="3_v76tt"]
+[ext_resource type="PackedScene" uid="uid://ciuf1i5xjrdjl" path="res://scenes/user interface/match_ui.tscn" id="4_v76tt"]
 
 [node name="RoundManager" type="Node"]
 script = ExtResource("1_8mv0p")
@@ -18,6 +19,8 @@ one_shot = true
 process_mode = 3
 wait_time = 4.0
 one_shot = true
+
+[node name="MatchUI" parent="." instance=ExtResource("4_v76tt")]
 
 [connection signal="timeout" from="RoundEndTimer" to="." method="_on_round_end_timer_timeout"]
 [connection signal="timeout" from="MatchEndTimer" to="." method="_on_match_end_timer_timeout"]

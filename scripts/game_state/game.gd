@@ -2,7 +2,6 @@ extends Node2D
 var player: Player
 var enemy: Enemy
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	player = $Player
 	enemy = $Enemy
@@ -10,7 +9,6 @@ func _ready() -> void:
 		Globals.reset_game_state()
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	if not is_instance_valid(player) or not is_instance_valid(enemy):
 		return

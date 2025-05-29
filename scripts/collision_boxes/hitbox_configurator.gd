@@ -6,6 +6,8 @@ static func position_hitbox(character: CharacterBody2D, size: Vector2) -> void:
 	var collision_shape = character.get_node("PhysicsCollision")
 	
 	var collision_extent = collision_shape.shape.radius + 1 # Slight offset to not overlap collision shape
+	hitbox_shape.shape.size.x = size.x
+	hitbox_shape.shape.size.y = size.y
 	hitbox_shape.position.x = (collision_extent + size.x / 2) * character.facing_direction
 	hitbox_shape.position.y = size.y
 

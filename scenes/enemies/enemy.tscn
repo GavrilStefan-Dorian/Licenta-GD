@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://dp02cnm8wwrmp" path="res://assets/player/walking_3.png" id="4_jt03m"]
 [ext_resource type="Texture2D" uid="uid://dkuxeab7aygyh" path="res://assets/player/cast_3.png" id="6_p7w77"]
 [ext_resource type="Texture2D" uid="uid://dd5n3destg3fu" path="res://assets/player/taunt_3.png" id="7_k4gvh"]
-[ext_resource type="PackedScene" uid="uid://doosyre2cbgpj" path="res://scenes/state_machines/state_machine_enemy.tscn" id="11_tihwb"]
+[ext_resource type="Script" uid="uid://2rv4obanfgsc" path="res://scripts/state_machine/state_machine_controller.gd" id="11_tihwb"]
 
 [sub_resource type="Animation" id="Animation_phaeh"]
 length = 0.001
@@ -968,4 +968,6 @@ metadata/_custom_type_script = "uid://c1ge0j6pfud22"
 [node name="HurtBoxShape" type="CollisionShape2D" parent="HurtBox"]
 shape = SubResource("CapsuleShape2D_lu5c6")
 
-[node name="StateMachine" parent="." instance=ExtResource("11_tihwb")]
+[node name="StateMachineController" type="Node" parent="."]
+script = ExtResource("11_tihwb")
+metadata/_custom_type_script = "uid://2rv4obanfgsc"

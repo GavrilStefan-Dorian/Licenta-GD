@@ -1,10 +1,13 @@
-class_name State extends Node
+class_name State
+extends RefCounted
 
-# Emitted when the state finishes and wants to transition to another state.
-signal finished(next_state_path: String, data: Dictionary)
+var state_machine: StateMachine
+var name: String
 
-# Called by the state machine when receiving unhandled input events.
-func handle_input(_event: InputEvent) -> void:
+func enter(_previous_state: String, _data: Dictionary = {}) -> void:
+	pass
+
+func exit() -> void:
 	pass
 
 func update(_delta: float) -> void:
@@ -13,8 +16,15 @@ func update(_delta: float) -> void:
 func physics_update(_delta: float) -> void:
 	pass
 
-func enter(_previous_state_path: String, _data := {}) -> void:
+func handle_input(_event: InputEvent) -> void:
 	pass
 
-func exit() -> void:
-	pass
+# Helper funcs
+func get_character() -> CharacterBody2D:
+	return state_machine.character
+
+func get_input() -> InputProvider:
+	return state_machine.input_provider
+
+func transition_to(state_name: String, data: Dictionary = {}) -> void:
+	state_machine.transition_to(state_name, data)

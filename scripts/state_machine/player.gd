@@ -54,7 +54,9 @@ func _on_Hitbox_area_entered(area: Area2D):
 		target.take_damage(hitbox_config.damage)
 	
 	if hitbox_config.immediate_knockback != Vector2.ZERO and target.has_method("apply_knockback"):
-		target.apply_knockback(hitbox_config.immediate_knockback * facing_direction)
+		var knockback = hitbox_config.immediate_knockback
+		knockback.x *= facing_direction
+		target.apply_knockback(knockback)
 	
 	# For grapple ( and maybe special debuffs )
 	if hitbox_config.special_behavior:
@@ -66,17 +68,18 @@ func take_damage(amount: int) -> void:
 	Globals.player_health -= amount
 	if Globals.player_health <= 0:
 		Globals.enemy_wins += 1
-		if Globals.player_wins >= ceil(Globals.MAX_ROUNDS / 2.0):
-			Globals.emit_signal("match_ended", "player")
+		if Globals.enemy_wins >= ceil(Globals.MAX_ROUNDS / 2.0):  
+			Globals.emit_signal("match_ended", "enemy")  
 		else:
-			Globals.emit_signal("round_ended", "player")
+			Globals.emit_signal("round_ended", "enemy")  	
 		queue_free()		
 
 func apply_knockback(knockback_force: Vector2) -> void:
 	if is_invincible or is_guarding:
 		return
-	if get_node_or_null("StateMachine"):
-		get_node("StateMachine")._transition_to_next_state("Knockback", {
+	var controller = get_node("StateMachineController")
+	if controller:
+		controller.state_machine.transition_to("knockback", {
 			"knockback_velocity": knockback_force
 		})
 	else:

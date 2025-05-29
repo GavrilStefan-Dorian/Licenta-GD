@@ -10,7 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://d3vauhpqg7vam" path="res://assets/player/taunt.png" id="5_yl2j2"]
 [ext_resource type="Script" uid="uid://c1ge0j6pfud22" path="res://scripts/collision_boxes/hurtbox.gd" id="6_sguum"]
 [ext_resource type="Texture2D" uid="uid://bb8imixh16vb8" path="res://assets/effects/HitSpark.png" id="10_fsrjl"]
-[ext_resource type="PackedScene" uid="uid://bevfrqejo0d1c" path="res://scenes/state_machines/state_machine_player.tscn" id="11_fsrjl"]
+[ext_resource type="Script" uid="uid://2rv4obanfgsc" path="res://scripts/state_machine/state_machine_controller.gd" id="11_fsrjl"]
 
 [sub_resource type="Animation" id="Animation_phaeh"]
 length = 0.001
@@ -907,4 +907,6 @@ sub_emitter = NodePath(".")
 texture = ExtResource("10_fsrjl")
 process_material = SubResource("ParticleProcessMaterial_es4m5")
 
-[node name="StateMachine" parent="." instance=ExtResource("11_fsrjl")]
+[node name="StateMachineController" type="Node" parent="."]
+script = ExtResource("11_fsrjl")
+metadata/_custom_type_script = "uid://2rv4obanfgsc"
