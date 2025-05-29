@@ -1,7 +1,7 @@
 class_name AirEnemy
 extends EnemyState
 
-func enter(previous_state_path: String, data := {}) -> void:
+func enter(_previous_state_path: String, _data := {}) -> void:
 	enemy.velocity.y = enemy.JUMP_VELOCITY
 	#enemy.animation_enemy.play("jump")
 

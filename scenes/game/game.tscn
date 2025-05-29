@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=3 uid="uid://bmgdfkjolc4bs"]
 
-[ext_resource type="Script" uid="uid://hi8js4go4m7q" path="res://scripts/game.gd" id="1_0sr1o"]
+[ext_resource type="Script" uid="uid://hi8js4go4m7q" path="res://scripts/game_state/game.gd" id="1_0sr1o"]
 [ext_resource type="PackedScene" uid="uid://benxux6yu5bkf" path="res://scenes/players/player.tscn" id="1_sul5r"]
 [ext_resource type="Texture2D" uid="uid://bffbg2d2bq4ur" path="res://assets/background/4/dead forest.png" id="2_7h61r"]
 [ext_resource type="PackedScene" uid="uid://dtt2pyuepyg1n" path="res://scenes/enemies/enemy.tscn" id="4_kelw5"]
@@ -36,11 +36,11 @@ position = Vector2(11370, 7506.67)
 zoom = Vector2(1.03, 1.03)
 
 [node name="Player" parent="." instance=ExtResource("1_sul5r")]
-position = Vector2(181, 480)
+position = Vector2(181, 411)
 collision_mask = 5
 
 [node name="Enemy" parent="." instance=ExtResource("4_kelw5")]
-position = Vector2(932, 480)
+position = Vector2(932, 411)
 
 [node name="UI" parent="." instance=ExtResource("6_5i0tg")]
 

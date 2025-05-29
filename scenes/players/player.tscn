@@ -1,14 +1,14 @@
 [gd_scene load_steps=108 format=3 uid="uid://benxux6yu5bkf"]
 
-[ext_resource type="Script" uid="uid://cafclrnbji6ug" path="res://scripts/player.gd" id="1_kc87p"]
+[ext_resource type="Script" uid="uid://cafclrnbji6ug" path="res://scripts/state_machine/player.gd" id="1_kc87p"]
 [ext_resource type="Texture2D" uid="uid://cvkh3qrj8s8s" path="res://assets/player/idle.png" id="2_edvpf"]
 [ext_resource type="Texture2D" uid="uid://difqataftwf3q" path="res://assets/player/hurt.png" id="2_yl2j2"]
 [ext_resource type="Texture2D" uid="uid://b2ob3julspwxj" path="res://assets/player/walking.png" id="3_olb2f"]
 [ext_resource type="Texture2D" uid="uid://di6han15aqgy5" path="res://assets/player/primary_attack.png" id="3_sguum"]
-[ext_resource type="Script" uid="uid://8ah4k8avhcqh" path="res://scripts/hitbox.gd" id="4_edvpf"]
+[ext_resource type="Script" uid="uid://8ah4k8avhcqh" path="res://scripts/collision_boxes/hitbox.gd" id="4_edvpf"]
 [ext_resource type="Texture2D" uid="uid://c7rmd866x0fcj" path="res://assets/player/cast.png" id="4_phaeh"]
 [ext_resource type="Texture2D" uid="uid://d3vauhpqg7vam" path="res://assets/player/taunt.png" id="5_yl2j2"]
-[ext_resource type="Script" uid="uid://c1ge0j6pfud22" path="res://scripts/hurtbox.gd" id="6_sguum"]
+[ext_resource type="Script" uid="uid://c1ge0j6pfud22" path="res://scripts/collision_boxes/hurtbox.gd" id="6_sguum"]
 [ext_resource type="Texture2D" uid="uid://bb8imixh16vb8" path="res://assets/effects/HitSpark.png" id="10_fsrjl"]
 [ext_resource type="PackedScene" uid="uid://bevfrqejo0d1c" path="res://scenes/state_machines/state_machine_player.tscn" id="11_fsrjl"]
 
@@ -839,16 +839,15 @@ animations = [{
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_gmlin"]
-radius = 30.0
-height = 102.0
+radius = 43.0
+height = 146.0
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_olb2f"]
-radius = 20.8333
-height = 166.667
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_fsrjl"]
+size = Vector2(40, 20)
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_jwv1m"]
-radius = 89.5833
-height = 304.167
+radius = 43.0
+height = 146.0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_es4m5"]
 particle_flag_disable_z = true
@@ -872,7 +871,7 @@ libraries = {
 autoplay = "idle"
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(10, -56)
+position = Vector2(1.28, 0.280003)
 scale = Vector2(0.48, 0.48)
 sprite_frames = SubResource("SpriteFrames_x7p2l")
 animation = &"idle"
@@ -880,29 +879,21 @@ autoplay = "idle"
 frame = 1
 
 [node name="PhysicsCollision" type="CollisionShape2D" parent="."]
-position = Vector2(8, -69)
-scale = Vector2(1.427, 1.427)
 shape = SubResource("CapsuleShape2D_gmlin")
 
 [node name="HitBox" type="Area2D" parent="."]
-position = Vector2(10, -55)
-scale = Vector2(0.48, 0.48)
 script = ExtResource("4_edvpf")
 metadata/_custom_type_script = "uid://8ah4k8avhcqh"
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(108.333, -27.0833)
-shape = SubResource("CapsuleShape2D_olb2f")
+shape = SubResource("RectangleShape2D_fsrjl")
 disabled = true
 
 [node name="HurtBox" type="Area2D" parent="."]
-position = Vector2(10, -55)
-scale = Vector2(0.48, 0.48)
 script = ExtResource("6_sguum")
 metadata/_custom_type_script = "uid://c1ge0j6pfud22"
 
 [node name="HurtBoxShape" type="CollisionShape2D" parent="HurtBox"]
-position = Vector2(-4.16667, -29.1667)
 shape = SubResource("CapsuleShape2D_jwv1m")
 
 [node name="Sprite2D" type="Sprite2D" parent="."]

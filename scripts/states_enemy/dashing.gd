@@ -3,7 +3,7 @@ extends EnemyState
 
 var dash_timer: float
 
-func enter(previous_state_path: String, data := {}) -> void:
+func enter(_previous_state_path: String, _data := {}) -> void:
 	enemy.can_dash = false
 	enemy.animation_player.play("guard") 
 	dash_timer = enemy.DASH_DURATION

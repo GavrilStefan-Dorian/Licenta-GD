@@ -4,8 +4,7 @@ extends EnemyState
 var knockback_duration := 0.8
 var elapsed := 0.0
 
-func enter(prev_state_path: String, data := {}) -> void:
-	#enemy.animation_player.play("hit")
+func enter(_prev_state_path: String, data := {}) -> void:
 	enemy.velocity = data.get("knockback_velocity", Vector2.ZERO)
 	elapsed = 0.0
 

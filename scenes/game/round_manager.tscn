@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://c2ysrtdq4s3nx"]
 
-[ext_resource type="Script" uid="uid://w5m1r1im7pym" path="res://scripts/round_manager.gd" id="1_8mv0p"]
+[ext_resource type="Script" uid="uid://w5m1r1im7pym" path="res://scripts/game_state/round_manager.gd" id="1_8mv0p"]
 [ext_resource type="PackedScene" uid="uid://benxux6yu5bkf" path="res://scenes/players/player.tscn" id="2_2im5g"]
 [ext_resource type="PackedScene" uid="uid://dtt2pyuepyg1n" path="res://scenes/enemies/enemy.tscn" id="3_v76tt"]
 

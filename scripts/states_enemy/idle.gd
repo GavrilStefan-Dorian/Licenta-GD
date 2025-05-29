@@ -1,7 +1,7 @@
 class_name IdleEnemy
 extends EnemyState
 
-func enter(previous_state_path: String, data := {}) -> void:
+func enter(_previous_state_path: String, _data := {}) -> void:
 	enemy.velocity.x = 0.0
 	enemy.animation_player.play("idle")
 

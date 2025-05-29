@@ -1,45 +1,36 @@
 class_name GrappleEnemy
 extends EnemyState
 
-func enter(previous_state_path: String, data := {}) -> void:
+const grapple_pull_force: Vector2 = Vector2(-200, -50)
+const grapple_push_force: Vector2 = Vector2(300, -100)
+
+
+func grapple_behavior(character: CharacterBody2D) -> Callable:
+	return func(target):
+		if target.has_method("apply_knockback"):
+			# Pull phase
+			var pull = grapple_pull_force
+			pull.x *= character.facing_direction
+			target.apply_knockback(pull)
+			
+			# Push phase after delay
+			await character.get_tree().create_timer(0.2).timeout
+			if is_instance_valid(target):
+				var push = grapple_push_force
+				push.x *= character.facing_direction
+				target.apply_knockback(push)
+
+func enter(_previous_state_path: String, _data := {}) -> void:
 	enemy.can_attack = false
 	enemy.animation_player.play("primary_attack")
 	enemy.attack_timer = 0.5
 	
-	# Grapple has special logic - check for enemies in range
-	perform_grapple()
+	enemy.hitbox_config = HitBoxConfigurator.configure_hitbox(enemy, Vector2(100,50), grapple_behavior)
 
-func perform_grapple():
-	var space_state = enemy.get_world_2d().direct_space_state
-	var query = PhysicsRayQueryParameters2D.create(
-		enemy.position,
-		enemy.position + Vector2(enemy.facing_direction * 150, 0)
-	)
-	var result = space_state.intersect_ray(query)
-	print("Grapple ray result: ", result)
-
-	
-	if result and result.collider.is_in_group("players"):
-		var enemy = result.collider
-		
-		# Pull enemy towards enemy
-		if enemy.has_method("apply_knockback"):
-			var pull_force = Vector2(-200, -50)
-			enemy.apply_knockback(pull_force)
-		
-		# Deal damage after delay
-		await enemy.get_tree().create_timer(0.2).timeout
-		if enemy and is_instance_valid(enemy):
-			if enemy.has_method("take_damage"):
-				enemy.take_damage(4)
-			# Then push away
-			if enemy.has_method("apply_knockback"):
-				enemy.apply_knockback(Vector2(300, -100))
 
 func physics_update(delta: float) -> void:
 	var input_direction_x := Input.get_axis("move_left_enemy", "move_right_enemy")
-	
-	# No movement during grapple
+
 	enemy.velocity.x = move_toward(enemy.velocity.x, 0, enemy.SPEED * 3)
 	enemy.velocity += enemy.get_gravity() * delta
 	enemy.move_and_slide()
@@ -64,7 +55,6 @@ func physics_update(delta: float) -> void:
 		finished.emit(IDLE)
 	elif Input.is_action_pressed("move_left_enemy") or Input.is_action_pressed("move_right_enemy"):
 		finished.emit(WALKING)
-
-
 func exit():
 	enemy.can_attack = true
+	enemy.hitbox_config = HitBoxConfigurator.reset()
