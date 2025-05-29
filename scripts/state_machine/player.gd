@@ -5,14 +5,22 @@ const SPEED = 400.0
 const JUMP_VELOCITY = -550.0
 const DASH_SPEED = 600.0
 const DASH_DURATION = 0.3
+
 var current_attack_damage: int = 0
 var current_attack_knockback: Vector2 = Vector2.ZERO
+var current_guard_break: bool = false
+var current_hitstun_duration: float = 0.3
 var current_enemy_lift: float = 0
 var attack_timer: float = 0
 var can_attack: bool = true
+
 var is_guarding: bool = false
+var guard_damage_reduction: float = 1.0
+var being_hit: bool = false
 var is_invincible: bool = false
+
 var can_dash: bool = true
+var is_crouching: bool = false
 var facing_direction := 1  # 1 = right, -1 = left
 
 var hitbox_config := {
@@ -50,6 +58,10 @@ func _on_Hitbox_area_entered(area: Area2D):
 	if !target or !is_instance_valid(target):
 		return
 	
+	if target.is_guarding:
+		if target.has_method("force_state_transition"):
+			target.force_state_transition("hitstun", {"hitstun_duration": hitbox_config.get("hitstun_duration", 0.3)})
+	
 	if hitbox_config.damage > 0 and target.has_method("take_damage"):
 		target.take_damage(hitbox_config.damage)
 	
@@ -58,13 +70,21 @@ func _on_Hitbox_area_entered(area: Area2D):
 		knockback.x *= facing_direction
 		target.apply_knockback(knockback)
 	
-	# For grapple ( and maybe special debuffs )
+	if not target.get("is_guarding", false) and target.has_method("apply_hitstun"):
+		target.apply_hitstun(hitbox_config.get("hitstun_duration", 0.3))
+	
 	if hitbox_config.special_behavior:
 		hitbox_config.special_behavior.call(target)
 
 func take_damage(amount: int) -> void:
-	if is_invincible or is_guarding:
+	if is_guarding:
+		amount = int(amount * guard_damage_reduction)
+		if amount <= 0:
+			return
+	
+	if is_invincible:
 		return
+		
 	Globals.player_health -= amount
 	if Globals.player_health <= 0:
 		Globals.enemy_wins += 1
@@ -75,8 +95,12 @@ func take_damage(amount: int) -> void:
 		queue_free()		
 
 func apply_knockback(knockback_force: Vector2) -> void:
-	if is_invincible or is_guarding:
+	if is_guarding:
+		knockback_force *= 0.3
+	
+	if is_invincible:
 		return
+		
 	var controller = get_node("StateMachineController")
 	if controller:
 		controller.state_machine.transition_to("knockback", {
@@ -84,3 +108,14 @@ func apply_knockback(knockback_force: Vector2) -> void:
 		})
 	else:
 		velocity = knockback_force  # Fallback
+
+func force_state_transition(new_state: String, data: Dictionary = {}) -> void:
+	var controller = get_node("StateMachineController")
+	if controller:
+		controller.state_machine.transition_to(new_state, data)
+		
+func apply_hitstun(duration: float) -> void:
+	force_state_transition("hitstun", {"hitstun_duration": duration})
+
+func apply_status_effect(effect_name: String, duration: float) -> void:
+	pass

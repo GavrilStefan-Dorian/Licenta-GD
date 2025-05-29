@@ -1,23 +1,73 @@
-[gd_scene load_steps=7 format=3 uid="uid://doomgnondnlee"]
+[gd_scene load_steps=14 format=3 uid="uid://doomgnondnlee"]
 
 [ext_resource type="Script" uid="uid://b18xvrwruc5ei" path="res://scripts/fireball.gd" id="1_3s14c"]
 [ext_resource type="Script" uid="uid://0oi02tywmtkp" path="res://scripts/fire_trail.gd" id="2_1gl40"]
+[ext_resource type="Texture2D" uid="uid://d2ryq0t88551r" path="res://assets/fireball/blue/spritesheet-512px-by197px-per-frame.png" id="3_cb14k"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1gl40"]
-
-[sub_resource type="CanvasTexture" id="CanvasTexture_cb14k"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1gl40"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_cb14k"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_7kba2"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(0, 0, 512, 197)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_43lgj"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(512, 0, 512, 197)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqoxj"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(1024, 0, 512, 197)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_86oub"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(0, 197, 512, 197)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_qaphm"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(512, 197, 512, 197)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mi4h5"]
+atlas = ExtResource("3_cb14k")
+region = Rect2(1024, 197, 512, 197)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1gl40"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7kba2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_43lgj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqoxj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_86oub")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_qaphm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mi4h5")
+}],
+"loop": true,
+"name": &"cast",
+"speed": 14.0
+}, {
+"frames": [],
+"loop": true,
+"name": &"default",
+"speed": 24.0
+}]
+
 [node name="Fireball" type="RigidBody2D"]
 physics_material_override = SubResource("PhysicsMaterial_1gl40")
 script = ExtResource("1_3s14c")
-
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(0, -1)
-texture = SubResource("CanvasTexture_cb14k")
 
 [node name="FireTrail" type="CPUParticles2D" parent="."]
 script = ExtResource("2_1gl40")
@@ -31,3 +81,8 @@ shape = SubResource("CircleShape2D_1gl40")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, -2)
 shape = SubResource("CircleShape2D_cb14k")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_1gl40")
+animation = &"cast"
+frame_progress = 0.426974

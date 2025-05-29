@@ -8,6 +8,8 @@ var attack_timer: float = 0.0
 func grapple_behavior(character: CharacterBody2D) -> Callable:
 	return func(target):
 		if target.has_method("apply_knockback"):
+			if target.has_method("force_state_transition"):
+				target.force_state_transition("hitstun")
 			# Pull phase
 			var pull = grapple_pull_force
 			pull.x *= character.facing_direction
@@ -19,6 +21,8 @@ func grapple_behavior(character: CharacterBody2D) -> Callable:
 				var push = grapple_push_force
 				push.x *= character.facing_direction
 				target.apply_knockback(push)
+				if target.has_method("apply_hitstun"):
+					target.apply_hitstun(1.2)
 
 func enter(_previous_state: String, _data: Dictionary = {}) -> void:
 	var character = get_character()
@@ -26,6 +30,8 @@ func enter(_previous_state: String, _data: Dictionary = {}) -> void:
 	character.animation_player.play("primary_attack")
 	attack_timer = 0.5
 	
+	character.current_guard_break = true
+	character.current_hitstun_duration = 1.2
 	if HitBoxConfigurator:
 		character.hitbox_config = HitBoxConfigurator.configure_hitbox(character, Vector2(100,50), grapple_behavior)
 

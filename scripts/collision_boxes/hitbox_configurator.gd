@@ -18,7 +18,9 @@ static func configure_hitbox(character: CharacterBody2D, size: Vector2, special_
 		"is_active": true,
 		"damage": character.current_attack_damage,
 		"immediate_knockback": character.current_attack_knockback,
-		"special_behavior": special_behavior.call(character) if special_behavior.is_valid() else null
+		"special_behavior": special_behavior.call(character) if special_behavior.is_valid() else null,
+		"guard_break": character.current_guard_break,
+        "hitstun_duration": character.current_hitstun_duration
 	}
 
 static func reset() -> Dictionary:
@@ -27,5 +29,7 @@ static func reset() -> Dictionary:
 		"is_grapple": false,
 		"damage": 0,
 		"immediate_knockback": Vector2.ZERO,
-		"special_behavior": null
+		"special_behavior": null,
+		"guard_break": false,
+        "hitstun_duration": 0.0
 	}
