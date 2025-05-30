@@ -25,3 +25,10 @@ func is_action_pressed(action: String) -> bool:
 
 func is_movement_pressed() -> bool:
 	return Input.is_action_pressed("move_left_enemy") or Input.is_action_pressed("move_right_enemy")
+
+func is_action_released(action: String) -> bool:
+	match action:
+		"guard":
+			return Input.is_action_just_released("guard_enemy")
+		_:
+			return false

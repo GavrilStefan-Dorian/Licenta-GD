@@ -15,7 +15,7 @@ func physics_update(delta: float) -> void:
 	character.velocity += character.get_gravity() * delta
 	character.move_and_slide()
 	
-	if not input.is_action_pressed("guard"):
+	if input.is_action_released("guard"):
 		transition_to("idle")
 	elif input.is_action_pressed("jump"):
 		transition_to("air")

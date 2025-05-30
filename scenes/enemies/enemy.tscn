@@ -1,4 +1,4 @@
-[gd_scene load_steps=122 format=3 uid="uid://dtt2pyuepyg1n"]
+[gd_scene load_steps=123 format=3 uid="uid://dtt2pyuepyg1n"]
 
 [ext_resource type="Texture2D" uid="uid://dw40jna4kcsyd" path="res://assets/player/idle_3.png" id="1_8e3ao"]
 [ext_resource type="Script" uid="uid://bjni01ogat37h" path="res://scripts/state_machine/enemy.gd" id="1_38ino"]
@@ -178,10 +178,27 @@ tracks/1/keys = {
 "values": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
 }
 
+[sub_resource type="Animation" id="Animation_p7w77"]
+resource_name = "hurt"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimatedSprite2D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0, 11]
+}
+
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_phaeh"]
 _data = {
 &"RESET": SubResource("Animation_phaeh"),
 &"guard": SubResource("Animation_tihwb"),
+&"hurt": SubResource("Animation_p7w77"),
 &"idle": SubResource("Animation_olb2f"),
 &"primary_attack": SubResource("Animation_jwv1m"),
 &"spell_cast": SubResource("Animation_es4m5"),

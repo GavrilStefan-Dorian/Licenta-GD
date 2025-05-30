@@ -4,12 +4,10 @@ extends InputProvider
 var input_blocked := false
 
 func get_movement_axis() -> float:
-	return 0.0 if input_blocked else Input.get_axis("move_left", "move_right")
+	return Input.get_axis("move_left", "move_right")
 
 func is_action_pressed(action: String) -> bool:
-	if input_blocked:
-		return false
-		
+
 	match action:
 		"jump":
 			return Input.is_action_just_pressed("jump")
@@ -29,4 +27,11 @@ func is_action_pressed(action: String) -> bool:
 			return false
 
 func is_movement_pressed() -> bool:
-	return false if input_blocked else (Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"))
+	return (Input.is_action_pressed("move_left") or Input.is_action_pressed("move_right"))
+
+func is_action_released(action: String) -> bool:
+	match action:
+		"guard":
+			return Input.is_action_just_released("guard")
+		_:
+			return false
