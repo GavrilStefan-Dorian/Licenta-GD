@@ -964,7 +964,6 @@ scale = Vector2(0.48, 0.48)
 sprite_frames = SubResource("SpriteFrames_pb0yv")
 animation = &"idle"
 autoplay = "idle"
-frame = 1
 flip_h = true
 
 [node name="PhysicsCollision" type="CollisionShape2D" parent="."]

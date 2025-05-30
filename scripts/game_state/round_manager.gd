@@ -16,6 +16,7 @@ func _ready():
 	Globals.round_ended.connect(_on_round_ended)
 	Globals.match_ended.connect(_on_match_ended)
 
+	# match_ui.set_pause_enabled(false)
 	await get_tree().create_timer(0.5).timeout
 	match_ui.show_match_start()
 	await get_tree().create_timer(3.0).timeout

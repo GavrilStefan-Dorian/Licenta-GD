@@ -6,6 +6,7 @@ extends CanvasLayer
 @onready var sub_label = find_child("SubLabel", true, false)
 @onready var score_label = find_child("ScoreLabel", true, false)
 
+@export var pause_during_displays: bool = true
 var is_showing := false
 var pause_count := 0 
 
@@ -63,9 +64,11 @@ func _show_status(main_text: String, sub_text: String, score_text: String, durat
     
     visible = true
     
-    if pause_count == 0:
+    if pause_during_displays and pause_count == 0:
         get_tree().paused = true
-    pause_count += 1
+
+    if pause_during_displays:
+        pause_count += 1
     
     animation_player.play("show")
     await animation_player.animation_finished
@@ -84,9 +87,18 @@ func _show_status(main_text: String, sub_text: String, score_text: String, durat
     
     visible = false
     
-    pause_count -= 1
-    if pause_count <= 0:
-        get_tree().paused = false
-        pause_count = 0
+    if pause_during_displays:
+        pause_count -= 1
+        if pause_count <= 0:
+            get_tree().paused = false
+            pause_count = 0
     
     is_showing = false
+
+func set_pause_enabled(enabled: bool):
+    pause_during_displays = enabled
+    
+	# Unpause if disable pausing while running 
+    if not enabled and get_tree().paused and pause_count > 0:
+        get_tree().paused = false
+        pause_count = 0
