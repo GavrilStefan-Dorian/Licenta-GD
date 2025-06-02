@@ -29,8 +29,9 @@ func setup_states():
 	state_machine.add_state("grapple", GrappleState.new())
 	state_machine.add_state("guard", GuardState.new())
 	state_machine.add_state("dash", DashState.new())
-	state_machine.add_state("knockback", KnockbackState.new())
+	# state_machine.add_state("knockback", KnockbackState.new())
 	state_machine.add_state("hurt", HurtState.new())
+	state_machine.add_state("dying", DyingState.new())
 
 func _process(delta: float) -> void:
 	if state_machine:

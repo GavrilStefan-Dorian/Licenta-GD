@@ -51,9 +51,9 @@ func physics_update(delta: float) -> void:
 	if attack_timer > 0:
 		return
 		
-	if input.is_action_pressed("jump"):
-		transition_to("air")
-	elif is_equal_approx(input_direction_x, 0.0):
+	# if input.is_action_pressed("jump"):
+	# 	transition_to("air", {"air_source": "jump"})
+	if is_equal_approx(input_direction_x, 0.0):
 		transition_to("idle")
 	elif input.is_movement_pressed():
 		transition_to("walking")

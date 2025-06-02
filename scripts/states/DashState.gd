@@ -27,9 +27,9 @@ func physics_update(delta: float) -> void:
 		
 	var input_direction_x = input.get_movement_axis()
 	
-	if input.is_action_pressed("jump"):
-		transition_to("air")
-	elif input.is_action_pressed("jab"):
+	# if input.is_action_pressed("jump"):
+	# 	transition_to("air", {"air_source": "jump"})
+	if input.is_action_pressed("jab"):
 		transition_to("attack", { "attack_type": "jab" })
 	elif input.is_action_pressed("heavy_blow"):
 		transition_to("attack", { "attack_type": "heavy_blow" })

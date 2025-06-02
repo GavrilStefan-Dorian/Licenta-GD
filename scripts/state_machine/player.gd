@@ -19,7 +19,7 @@ var hitbox_config := {
     "is_active": false,
     "is_grapple": false,
     "damage": 0,
-    "immediate_knockback": Vector2.ZERO,
+    "knockback": Vector2.ZERO,
     "special_behavior": null  # Callable for custom behaviors
 }
 
@@ -38,13 +38,3 @@ func _ready():
 func _on_anim_finished(_anim_name: String):
     pass
 
-func apply_knockback(knockback_force: Vector2) -> void:
-    if is_invincible or is_guarding:
-        return
-    var controller = get_node("StateMachineController")
-    if controller:
-        controller.state_machine.transition_to("knockback", {
-            "knockback_velocity": knockback_force
-        })
-    else:
-        velocity = knockback_force  # Fallback

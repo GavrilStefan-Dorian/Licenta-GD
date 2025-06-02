@@ -151,6 +151,8 @@ _data = {
 [node name="MatchUI" type="CanvasLayer"]
 layer = 10
 script = ExtResource("1_eodgr")
+pause_during_displays = false
+show_displays = false
 
 [node name="Banner" type="ColorRect" parent="."]
 modulate = Color(1, 1, 1, 0)

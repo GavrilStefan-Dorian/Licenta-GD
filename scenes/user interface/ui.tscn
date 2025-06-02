@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://4g7m3gjb6cy0"]
+[gd_scene load_steps=7 format=3 uid="uid://4g7m3gjb6cy0"]
 
 [ext_resource type="Script" uid="uid://cu1seqkxtbar4" path="res://scripts/ui/ui.gd" id="1_4kkmn"]
 [ext_resource type="Shader" uid="uid://bsoj6dx0cru4d" path="res://shaders/pause_menu.gdshader" id="1_b2pox"]
 [ext_resource type="Texture2D" uid="uid://dghpjwu6y4q8o" path="res://assets/healthbars/bg.png" id="1_yp1a8"]
 [ext_resource type="Texture2D" uid="uid://56b2yy75exnd" path="res://assets/healthbars/progress.png" id="3_x14l5"]
+[ext_resource type="Texture2D" uid="uid://bor0ob03you8f" path="res://assets/healthbars/damage_2.png" id="5_4kkmn"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_5nlf0"]
 shader = ExtResource("1_b2pox")
@@ -29,8 +30,23 @@ theme_override_constants/margin_top = 35
 custom_minimum_size = Vector2(300, 30)
 layout_mode = 2
 value = 100.0
-texture_under = ExtResource("1_yp1a8")
 texture_progress = ExtResource("3_x14l5")
+
+[node name="DamageBar" type="TextureProgressBar" parent="MarginContainer/PlayerHealth"]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+texture_under = ExtResource("1_yp1a8")
+texture_progress = ExtResource("5_4kkmn")
+
+[node name="Timer" type="Timer" parent="MarginContainer/PlayerHealth"]
+wait_time = 0.6
+one_shot = true
 
 [node name="MarginContainer2" type="MarginContainer" parent="."]
 anchors_preset = 1
@@ -46,5 +62,23 @@ theme_override_constants/margin_right = 150
 custom_minimum_size = Vector2(300, 30)
 layout_mode = 2
 value = 100.0
-texture_under = ExtResource("1_yp1a8")
 texture_progress = ExtResource("3_x14l5")
+
+[node name="DamageBar" type="TextureProgressBar" parent="MarginContainer2/EnemyHealth"]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+value = 100.0
+texture_under = ExtResource("1_yp1a8")
+texture_progress = ExtResource("5_4kkmn")
+
+[node name="Timer" type="Timer" parent="MarginContainer2/EnemyHealth"]
+wait_time = 0.6
+one_shot = true
+
+[connection signal="timeout" from="MarginContainer/PlayerHealth/Timer" to="." method="_on_timer_timeout"]
+[connection signal="timeout" from="MarginContainer2/EnemyHealth/Timer" to="." method="_on_enemy_timer_timeout"]

@@ -12,8 +12,8 @@ func grapple_behavior(character: CharacterBody2D) -> Callable:
             # Pull phase
             var pull = grapple_pull_force
             pull.x *= character.facing_direction
-            target_controller.state_machine.transition_to("knockback", {
-                "knockback_velocity": pull
+            target_controller.state_machine.transition_to("hurt", {
+                "knockback": pull
             })
             
             # Push phase after delay
@@ -21,8 +21,8 @@ func grapple_behavior(character: CharacterBody2D) -> Callable:
             if is_instance_valid(target) and is_instance_valid(target_controller):
                 var push = grapple_push_force
                 push.x *= character.facing_direction
-                target_controller.state_machine.transition_to("knockback", {
-                    "knockback_velocity": push
+                target_controller.state_machine.transition_to("hurt", {
+                    "knockback": push
                 })
 
 func enter(_previous_state: String, _data: Dictionary = {}) -> void:
@@ -48,9 +48,9 @@ func physics_update(delta: float) -> void:
     if attack_timer > 0:
         return
     
-    if input.is_action_pressed("jump"):
-        transition_to("air")
-    elif input.is_action_pressed("jab"):
+    # if input.is_action_pressed("jump"):
+    #     transition_to("air", {"air_source": "jump"})
+    if input.is_action_pressed("jab"):
         transition_to("attack", { "attack_type": "jab" })
     elif input.is_action_pressed("heavy_blow"):
         transition_to("attack", { "attack_type": "heavy_blow" })
