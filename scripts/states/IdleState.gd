@@ -27,6 +27,8 @@ func physics_update(delta: float) -> void:
 		transition_to("attack", { "attack_type": "heavy_blow" })
 	elif input.is_action_pressed("upper_cut"):
 		transition_to("attack", { "attack_type": "uppercut" })
+	elif input.is_action_pressed("fireball"):
+		transition_to("attack", {"attack_type": "fireball"})
 	elif input.is_action_pressed("grapple"):
 		transition_to("grapple")
 	elif input.is_action_pressed("guard"):

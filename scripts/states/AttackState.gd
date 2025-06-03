@@ -35,8 +35,52 @@ var ATTACK_PRESETS = {
 		"enemy_lift": 100,
 		"hitbox_size": Vector2(40, 40),
 		"hitbox_offset": Vector2(10, -120)
+	},
+	 "fireball": {
+		"damage": 8,
+		"knockback": Vector2(200, -100),
+		"hitstun": 0.4,
+		"recovery": 0.5,
+		"guard_break": false,
+		"enemy_lift": 0,
+		"projectile": true,
+		"projectile_scene": "res://scenes/projectiles/fireball.tscn",
+		"projectile_offset": Vector2(50, -20),
+		"hitbox_size": Vector2(0, 0)  
 	}
 }
+func spawn_projectile(character: CharacterBody2D, data: Dictionary) -> void:
+	if not data.get("projectile", false):
+		return
+		
+	var projectile_scene_path = data.get("projectile_scene", "")
+	if projectile_scene_path.is_empty():
+		return
+		
+	var projectile_scene = load(projectile_scene_path)
+	if projectile_scene == null:
+		return
+		
+	var projectile = projectile_scene.instantiate()
+	if not projectile is Fireball:
+		projectile.queue_free()
+		return
+		
+	# Setup projectile
+	projectile.damage = data.get("damage", 5)
+	projectile.knockback = data.get("knockback", Vector2(100, -50))
+	projectile.hitstun = data.get("hitstun", 0.3)
+	projectile.direction = character.facing_direction
+	projectile.source_character = character
+	
+	# Position the projectile
+	var offset = data.get("projectile_offset", Vector2(30, -20))
+	offset.x *= character.facing_direction
+	projectile.global_position = character.global_position + offset
+	
+	# Add to scene
+	character.get_tree().root.add_child(projectile)
+
 
 func enter(_previous_state: String, data: Dictionary = {}) -> void:
 	var character = get_character()
@@ -46,6 +90,12 @@ func enter(_previous_state: String, data: Dictionary = {}) -> void:
 	
 	character.animation_player.play("primary_attack")
 	attack_timer = character.animation_player.get_animation("primary_attack").length
+	
+	if attack_data.get("projectile", false):
+		# Schedule projectile spawning halfway through the animation
+		var timer = character.get_tree().create_timer(attack_timer * 0.5)
+		timer.timeout.connect(func(): spawn_projectile(character, attack_data))
+		return
 	
 	character.current_attack_damage = attack_data.damage
 	character.current_attack_knockback = attack_data.knockback

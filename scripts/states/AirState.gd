@@ -22,7 +22,7 @@ func physics_update(delta: float) -> void:
 	var character = get_character()
 	var input = get_input()
 
-	character.velocity += character.get_gravity() * delta * 1.5
+	character.velocity += character.get_gravity() * delta * 1.2
 	character.move_and_slide()
 
 	if character.is_on_floor():

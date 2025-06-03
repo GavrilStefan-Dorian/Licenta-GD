@@ -14,6 +14,8 @@ func is_action_pressed(action: String) -> bool:
 			return Input.is_action_just_pressed("heavy_blow_enemy")
 		"upper_cut":
 			return Input.is_action_just_pressed("upper_cut_enemy")
+		"fireball":
+			return Input.is_action_just_pressed("fireball_enemy")
 		"grapple":
 			return Input.is_action_just_pressed("grapple_enemy")
 		"guard":

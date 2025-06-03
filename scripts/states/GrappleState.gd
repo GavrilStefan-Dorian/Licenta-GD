@@ -24,11 +24,11 @@ func grapple_behavior(character: CharacterBody2D) -> Callable:
 					"is_guard_broken_by_grapple": true
 				})
 				await character.get_tree().create_timer(0.2).timeout
-				if is_instance_valid(target) and is_instance_valid(target_controller): # Check if still in hurt from pull
-					target_controller.state_machine.transition_to("hurt", { # Re-transition to apply new knockback
+				if is_instance_valid(target) and is_instance_valid(target_controller):
+					target_controller.state_machine.transition_to("hurt", { 
 						"damage": 0,
 						"knockback": push_force,
-						"hitstun_duration": GRAPPLE_HITSTUN_ON_GUARD_BREAK, # Keep same hitstun or adjust if needed
+						"hitstun_duration": GRAPPLE_HITSTUN_ON_GUARD_BREAK, 
 						"is_guard_broken_by_grapple": true 
 					})
 			else:
@@ -66,7 +66,7 @@ func physics_update(delta: float) -> void:
 	
 	var input_direction_x = input.get_movement_axis()
 
-	character.velocity.x = move_toward(character.velocity.x, 0, character.SPEED * 0.5) # Reduced control during grapple
+	character.velocity.x = move_toward(character.velocity.x, 0, character.SPEED * 0.5) 
 	character.velocity += character.get_gravity() * delta
 	character.move_and_slide()
 	
