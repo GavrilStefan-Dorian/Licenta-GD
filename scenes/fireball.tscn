@@ -5,7 +5,13 @@
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1gl40"]
 
-[sub_resource type="CanvasTexture" id="CanvasTexture_cb14k"]
+[sub_resource type="SpriteFrames" id="SpriteFrames_1gl40"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"fireball",
+"speed": 5.0
+}]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1gl40"]
 
@@ -15,9 +21,10 @@
 physics_material_override = SubResource("PhysicsMaterial_1gl40")
 script = ExtResource("1_3s14c")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(0, -1)
-texture = SubResource("CanvasTexture_cb14k")
+sprite_frames = SubResource("SpriteFrames_1gl40")
+animation = &"fireball"
 
 [node name="FireTrail" type="CPUParticles2D" parent="."]
 script = ExtResource("2_1gl40")

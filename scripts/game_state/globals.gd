@@ -1,5 +1,18 @@
 extends Node
 
+# ...
+var player_node: CharacterBody2D = null
+var enemy_node: CharacterBody2D = null
+	# ...
+
+# Call this when your player character is ready
+func register_player(player: CharacterBody2D):
+	player_node = player
+
+# Call this when your enemy character is ready
+func register_enemy(enemy: CharacterBody2D):
+	enemy_node = enemy
+
 signal stat_change_player
 
 var player_vulnerable: bool = true

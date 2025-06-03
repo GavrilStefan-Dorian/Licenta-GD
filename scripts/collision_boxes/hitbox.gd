@@ -28,17 +28,33 @@ func _on_area_entered(area: Area2D) -> void:
 	var target_controller = target.get_node("StateMachineController")
 	if !target_controller:
 		return
-	
-	if target.is_invincible or target.is_guarding:
+
+	if attacker.hitbox_config.get("is_grapple", false):
+		if attacker.hitbox_config.special_behavior:
+			attacker.hitbox_config.special_behavior.call(target)
 		return
-	
+
+	if target.is_guarding:
+		target_controller.state_machine.transition_to("hurt", {
+			"damage": 0,
+			"knockback": Vector2(20 * -attacker.facing_direction, 0), 
+			"hitstun_duration": target.GUARD_STUN_DURATION,
+			"is_guard_hit": true
+		})
+		return
+
+	if target.is_invincible: 
+		return
+
 	if attacker.hitbox_config.damage > 0 or attacker.hitbox_config.knockback != Vector2.ZERO:
-		var knockback = attacker.hitbox_config.knockback
-		knockback.x *= attacker.facing_direction
+		var knockback_force = attacker.hitbox_config.knockback
+		knockback_force.x *= attacker.facing_direction
+		
 		target_controller.state_machine.transition_to("hurt", {
 			"damage": attacker.hitbox_config.damage,
-			"knockback": knockback
+			"knockback": knockback_force,
+			"hitstun_duration": attacker.hitbox_config.get("hitstun_duration", 0.3) # Default if not set
 		})
 	
-	if attacker.hitbox_config.special_behavior:
+	if attacker.hitbox_config.special_behavior and not attacker.hitbox_config.get("is_grapple", false):
 		attacker.hitbox_config.special_behavior.call(target)
