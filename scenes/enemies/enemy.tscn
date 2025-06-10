@@ -1015,6 +1015,7 @@ height = 146.0
 collision_layer = 4
 collision_mask = 3
 script = ExtResource("1_38ino")
+ai_type = "dqn"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {

@@ -25,6 +25,9 @@ func _ready():
 					var basic_ai_provider = BasicAIInputProvider.new()
 					basic_ai_provider._initialize_ai(character, player_char_node)
 					input_provider = basic_ai_provider
+				"dqn": # Add this case
+					var dqn_provider = DeepQLearningInputProvider.new(character, player_char_node)
+					input_provider = dqn_provider
 				_:
 						input_provider = EnemyInputProvider.new()
 		else:
@@ -54,6 +57,8 @@ func _process(delta: float) -> void:
 	if state_machine:
 		if state_machine.input_provider is BasicAIInputProvider: # Add this
 			(state_machine.input_provider as BasicAIInputProvider).update_ai(delta)
+		elif state_machine.input_provider is DeepQLearningInputProvider:
+			(state_machine.input_provider as DeepQLearningInputProvider).update_ai(delta)
 		state_machine.update(delta)
 
 func _physics_process(delta: float) -> void:

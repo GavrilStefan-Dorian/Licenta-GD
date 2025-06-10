@@ -58,7 +58,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"fireball",
-"speed": 14.0
+"speed": 20.0
 }]
 
 [node name="Fireball" type="Area2D"]

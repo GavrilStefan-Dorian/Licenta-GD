@@ -1,7 +1,7 @@
 class_name Enemy
 extends CharacterBody2D
 
-@export var ai_type: String = "basic" # Options: "simple_keys", "basic"
+@export var ai_type: String = "basic" # Options: "simple_keys", "basic", "dqn"
 
 const SPEED = 400.0
 const JUMP_VELOCITY = -550.0
