@@ -16,10 +16,6 @@ func _ready():
     Globals.round_ended.connect(_on_round_ended)
     Globals.match_ended.connect(_on_match_ended)
 
-    # Connect to health change signals to detect when characters are about to die
-    Globals.stat_change_player.connect(_on_player_stat_change)
-    Globals.stat_change_enemy.connect(_on_enemy_stat_change)
-
     # match_ui.set_pause_enabled(false)
     await get_tree().create_timer(0.5).timeout
     match_ui.show_match_start()
@@ -52,12 +48,12 @@ func _on_match_ended(winner):
     save_ai_model()
 
     # Save AI model if using DQN
-    var enemies = get_tree().get_nodes_in_group("enemies")
-    for enemy in enemies:
-        if enemy.has_node("StateMachineController"):
-            var smc = enemy.get_node("StateMachineController")
-            if smc.state_machine and smc.state_machine.input_provider is DeepQLearningInputProvider:
-                (smc.state_machine.input_provider as DeepQLearningInputProvider).save_model()
+    # var enemies = get_tree().get_nodes_in_group("enemies")
+    # for enemy in enemies:
+    #     if enemy.has_node("StateMachineController"):
+    #         var smc = enemy.get_node("StateMachineController")
+            # if smc.state_machine and smc.state_machine.input_provider is DeepQLearningInputProvider:
+            #     (smc.state_machine.input_provider as DeepQLearningInputProvider).save_model_locally()
 
 func _on_round_end_timer_timeout():
     respawn_players()
@@ -101,37 +97,42 @@ func show_message(text):
     print(text)
 
 func save_ai_model():
-    # Create a new HTTP request for saving the model
+    # Find first enemy with DQN
+    var dqn_provider = null
+    var enemies = get_tree().get_nodes_in_group("enemies")
+    for enemy in enemies:
+        if enemy.has_node("StateMachineController"):
+            var smc = enemy.get_node("StateMachineController")
+            if smc.state_machine and smc.state_machine.input_provider is DeepQLearningInputProvider:
+                dqn_provider = smc.state_machine.input_provider
+                break
+    
+    if not dqn_provider:
+        print("No DQN AI found to save")
+        return
+    
+    # Get server URL from the provider
+    var server_url = dqn_provider.ai_server_url
+    if not server_url.ends_with("/"):
+        server_url += "/"
+    
+    # Create save request
     var save_request = HTTPRequest.new()
     add_child(save_request)
-    save_request.request_completed.connect(func(result, code, headers, body): 
-        var json = JSON.new()
-        var parse_result = json.parse(body.get_string_from_utf8())
-        if parse_result == OK and json.get_data().has("message"):
-            print("AI Model: " + json.get_data()["message"])
+    save_request.set_tls_options(TLSOptions.client()) # Basic TLS setup
+    
+    # Simple completion handler
+    save_request.request_completed.connect(func(result, _code, _headers, body): 
+        if result == HTTPRequest.RESULT_SUCCESS:
+            print("AI Model saved successfully")
+        else:
+            print("AI Model save failed")
         save_request.queue_free()
     )
-
-    # Prepare the save request
-    var save_data = {
-        "filepath": "E:/Licenta/Project/_game_prototype/dqn_script/models/fighting_ai_model_round.pkl"
-    }
-
-    var json_string = JSON.stringify(save_data)
-    var headers = ["Content-Type: application/json"]
-    save_request.request("http://localhost:5000/save_model", headers, HTTPClient.METHOD_POST, json_string)
-
-# New function to detect player health changes
-func _on_player_stat_change():
-    if Globals.player_health <= 0:
-        # Player is about to die, pause AI immediately
-        pause_ai_if_needed()
-
-# New function to detect enemy health changes
-func _on_enemy_stat_change():
-    if Globals.enemy_health <= 0:
-        # Enemy is about to die, pause AI immediately
-        pause_ai_if_needed()
+    
+    # Make the request to save
+    print("Saving AI model...")
+    save_request.request(server_url + "save_model_manual", [], HTTPClient.METHOD_POST, "")
 
 # New helper function to pause all DQN AIs
 func pause_ai_if_needed():

@@ -1,14 +1,37 @@
+import os
+import time
+import random
+import logging
+import threading
+import subprocess
+import re
+from collections import deque
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import random
-from collections import deque
-import pickle
-import time
-import os
 
-last_auto_save_time = time.time()
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# --- DQN Model and Agent ---
+STATE_KEYS = [
+    "my_health", "enemy_health", "my_position_x", "my_position_y", "enemy_position_x", "enemy_position_y",
+    "normalized_distance", "relative_position", "my_on_ground", "enemy_on_ground", "my_is_attacking", 
+    "enemy_is_attacking", "my_is_guarding", "enemy_is_guarding", "my_is_vulnerable", "enemy_is_vulnerable",
+    "time_since_last_action"
+]
+
+# Action mapping: ID to Name
+ACTION_ID_TO_NAME = {
+    0: "idle", 1: "move_left", 2: "move_right", 3: "jump", 4: "jab", 5: "heavy_blow", 
+    6: "upper_cut", 7: "fireball", 8: "grapple", 9: "guard", 10: "dash"
+}
+ACTION_NAME_TO_ID = {name: id for id, name in ACTION_ID_TO_NAME.items()}
+
 
 class QNetwork(nn.Module):
     def __init__(self, state_size, action_size):
@@ -17,6 +40,13 @@ class QNetwork(nn.Module):
         self.fc2 = nn.Linear(128, 256)
         self.fc3 = nn.Linear(256, 128)
         self.fc4 = nn.Linear(128, action_size)
+        self._init_weights(self)
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            nn.init.xavier_uniform_(module.weight)
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
@@ -25,232 +55,427 @@ class QNetwork(nn.Module):
         return self.fc4(x)
 
 
-class FightingGameDQN:
-    def __init__(self, state_size, action_size, load_model=None):
+class DQNAgent:
+    def __init__(self, state_size, action_size, model_path=None):
         self.state_size = state_size
         self.action_size = action_size
-        self.memory = deque(maxlen=10000)
-        self.gamma = 0.95  # discount rate
-        self.epsilon = 1.0  # exploration rate
-        self.epsilon_min = 0.1
-        self.epsilon_decay = 0.99
-        self.learning_rate = 0.002
+        self.memory = deque(maxlen=20000)
+        self.gamma = 0.99  # Discount rate
+        self.epsilon = 1.0  # Exploration rate
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995  # FIXED: Faster decay to see results quickly
+        self.learning_rate = 0.0005
+        self.batch_size = 64
+        self.update_target_every = 10
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        logger.info(f"Using device: {self.device}")
+
         self.model = QNetwork(state_size, action_size).to(self.device)
         self.target_model = QNetwork(state_size, action_size).to(self.device)
-        self.update_target_model()
-        self.optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)
-        self.criterion = nn.MSELoss()
+        self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate)
+        self.criterion = nn.SmoothL1Loss()
 
-        if load_model:
-            self.load_model(load_model)
+        # FIXED: Add better model file checking
+        if model_path:
+            if os.path.exists(model_path):
+                logger.info(f"Found existing model at {model_path}, loading it...")
+                self.load_model(model_path)
+            else:
+                logger.info(f"No model found at {model_path}, starting fresh")
+        
+        self.update_target_model()
+        self.steps_done = 0
+
+    def calculate_reward(self, old_state, new_state):
+        reward = 0.0
+
+        my_health_change = new_state.get("my_health", 0.0) - old_state.get("my_health", 0.0)
+        enemy_health_change = old_state.get("enemy_health", 0.0) - new_state.get("enemy_health", 0.0)
+
+        reward += my_health_change * 0.5 
+        reward += enemy_health_change * 1.0
+
+        if new_state.get("my_is_attacking") and new_state.get("normalized_distance", 1.0) < 0.15:
+            reward += 0.2  
+
+        if my_health_change < 0:
+            reward -= 0.5 
+
+        if enemy_health_change > 0:
+            reward += 1.0 
+
+        if new_state.get("my_is_guarding") and new_state.get("enemy_is_attacking"):
+            reward += 0.5  
+
+        stage_width = 1920.0  
+        stage_margin = stage_width * 0.2
+        if new_state.get("enemy_position_x", 0.0) < stage_margin or new_state.get("enemy_position_x", 0.0) > stage_width - stage_margin:
+            if new_state.get("my_position_x", 0.0) > stage_margin and new_state.get("my_position_x", 0.0) < stage_width - stage_margin:
+                reward += 0.3  
+
+        optimal_distance = 0.2  
+        distance_diff = abs(new_state.get("normalized_distance", 1.0) - optimal_distance)
+        reward += (0.5 - distance_diff) * 0.1  
+
+        return reward
 
     def update_target_model(self):
         self.target_model.load_state_dict(self.model.state_dict())
+        logger.info("Target model updated.")
 
     def remember(self, state, action, reward, next_state, done):
-        state_tensor = self._process_state(state)
-        next_state_tensor = self._process_state(next_state)
-        self.memory.append((state_tensor, action, reward, next_state_tensor, done))
+        # State should be a list/numpy array of floats/booleans
+        self.memory.append((
+            self._process_state_to_list(state), 
+                            action, reward, 
+            self._process_state_to_list(next_state), 
+                            done
+        ))
 
-    def _process_state(self, state_dict):
-        """Convert game state dictionary to tensor"""
-        # Extract relevant features from the state dictionary
-        features = [
-            state_dict["my_health"] / 100.0,
-            state_dict["enemy_health"] / 100.0,
-            state_dict["normalized_distance"],
-            state_dict["relative_position"],  # -1 = enemy is left, 1 = enemy is right
-            state_dict["my_on_ground"],  # 1 = on ground, 0 = in air
-            state_dict["enemy_on_ground"],
-            state_dict["my_is_attacking"],
-            state_dict["enemy_is_attacking"],
-            state_dict["my_is_guarding"],
-            state_dict["enemy_is_guarding"],
-            state_dict["my_is_vulnerable"],
-            state_dict["enemy_is_vulnerable"],
-            state_dict["my_position_x"] / 1000.0,  # Normalized screen position
-            state_dict["enemy_position_x"] / 1000.0,
-            state_dict["time_since_last_action"] / 60.0  # Normalized by frames (60fps)
-        ]
-        return torch.tensor(features, dtype=torch.float32).to(self.device)
+    def _process_state_to_list(self, state_dict_or_list):
+        if isinstance(state_dict_or_list, list): # Already processed
+            return state_dict_or_list
+        if not isinstance(state_dict_or_list, dict):
+            logger.error(f"Invalid state format: {state_dict_or_list}. Expected dict.")
+            return [0.0] * self.state_size # Return a default state vector
 
-    def act(self, state, training=False):
-        """Returns action to take based on current state"""
+        # Convert dictionary to a list of floats in the correct order
+        processed_state = []
+        for key in STATE_KEYS:
+            value = state_dict_or_list.get(key)
+            if isinstance(value, bool):
+                processed_state.append(1.0 if value else 0.0)
+            elif isinstance(value, (int, float)):
+                processed_state.append(float(value))
+            else:
+                logger.warning(f"State key '{key}' has unexpected value '{value}' (type: {type(value)}). Using 0.0.")
+                processed_state.append(0.0)
+        
+        if len(processed_state) != self.state_size:
+             logger.error(f"State size mismatch. Expected {self.state_size}, got {len(processed_state)} for state: {state_dict_or_list}")
+             # Pad or truncate if necessary, or handle error more strictly
+             processed_state = (processed_state + [0.0] * self.state_size)[:self.state_size]
+        return processed_state
+
+
+    def act(self, state_dict, training=True): # state_dict is the raw dict from Godot
+        self.steps_done +=1
         if training and random.random() <= self.epsilon:
-            # Exploration: choose random action
-            return random.randrange(self.action_size)
-
-        state_tensor = self._process_state(state)
-        self.model.eval()
+            return random.randrange(self.action_size) # Return action ID
+        
+        state_list = self._process_state_to_list(state_dict)
+        state_tensor = torch.tensor([state_list], dtype=torch.float32).to(self.device)
+        
+        self.model.eval() # Set model to evaluation mode
         with torch.no_grad():
-            state_tensor = state_tensor.unsqueeze(0)
-            q_values = self.model(state_tensor)
-            action = torch.argmax(q_values[0]).item()
-        self.model.train()
-        return action
+            action_values = self.model(state_tensor)
+        if training: # Set back to train mode if it was training
+            self.model.train()
+            
+        return torch.argmax(action_values).item() # Return action ID
 
-    def replay_training(self, batch_size=64):
-        """Train the model on a batch of experiences"""
-        if len(self.memory) < batch_size:
-            return
+    def replay_training(self):
+        if len(self.memory) < self.batch_size:
+            return 0.0 # Not enough samples for a batch
 
-        batch = random.sample(self.memory, batch_size)
+        minibatch = random.sample(self.memory, self.batch_size)
+        
+        states = torch.tensor([s[0] for s in minibatch], dtype=torch.float32).to(self.device)
+        actions = torch.tensor([s[1] for s in minibatch], dtype=torch.long).unsqueeze(1).to(self.device)
+        rewards = torch.tensor([s[2] for s in minibatch], dtype=torch.float32).to(self.device)
+        next_states = torch.tensor([s[3] for s in minibatch], dtype=torch.float32).to(self.device)
+        dones = torch.tensor([s[4] for s in minibatch], dtype=torch.bool).to(self.device)
 
-        states = torch.stack([experience[0] for experience in batch])
-        actions = torch.tensor([experience[1] for experience in batch],
-                               dtype=torch.long).unsqueeze(1).to(self.device)
-        rewards = torch.tensor([experience[2] for experience in batch],
-                               dtype=torch.float32).to(self.device)
-        next_states = torch.stack([experience[3] for experience in batch])
-        dones = torch.tensor([experience[4] for experience in batch],
-                             dtype=torch.float32).to(self.device)
+        # Get Q values for current states from the online model
+        current_q_values = self.model(states).gather(1, actions).squeeze(1)
 
-        # Current Q Values
-        curr_q_values = self.model(states).gather(1, actions)
-
-        # Next Q Values using target network
+        # Get max Q values for next states from the target model
         with torch.no_grad():
-            next_q_values = self.target_model(next_states).max(1)[0]
-            target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
-            target_q_values = target_q_values.unsqueeze(1)
+            next_q_values_target = self.target_model(next_states).max(1)[0]
+        
+        # Compute the expected Q values (Bellman equation)
+        expected_q_values = rewards + (self.gamma * next_q_values_target * (~dones))
 
-        # Update model
-        loss = self.criterion(curr_q_values, target_q_values)
+        # Compute loss
+        loss = self.criterion(current_q_values, expected_q_values)
+
+        # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) # Gradient clipping
         self.optimizer.step()
 
-        # Update exploration rate
+        # Decay epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+        
+        # Update target network
+        if self.steps_done % self.update_target_every == 0:
+            self.update_target_model()
+            
+        return loss.item()
 
     def save_model(self, filepath):
-        """Save model and training parameters"""
-        data = {
-            "model_state": self.model.state_dict(),
-            "target_model_state": self.target_model.state_dict(),
-            "optimizer_state": self.optimizer.state_dict(),
-            "epsilon": self.epsilon,
-            "memory": list(self.memory)
-        }
-        with open(filepath, "wb") as f:
-            pickle.dump(data, f)
+        try:
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(filepath), exist_ok=True)
+            
+            # FIXED: Save with more detailed info
+            save_data = {
+                'model_state_dict': self.model.state_dict(),
+                'target_model_state_dict': self.target_model.state_dict(),
+                'optimizer_state_dict': self.optimizer.state_dict(),
+                'epsilon': self.epsilon,
+                'steps_done': self.steps_done,
+                'memory': list(self.memory),
+                'save_time': time.time()
+            }
+            
+            # FIXED: Ensure drive is mounted by testing write
+            torch.save(save_data, filepath)
+            
+            # Verify the save worked
+            if os.path.exists(filepath):
+                logger.info(f"✅ Model saved to {filepath} - File size: {os.path.getsize(filepath)} bytes")
+            else:
+                logger.error(f"❌ Model save failed - File not created at {filepath}")
+                
+        except Exception as e:
+            logger.error(f"Error saving model: {e}", exc_info=True)
 
     def load_model(self, filepath):
-        """Load model and training parameters"""
         try:
-            with open(filepath, "rb") as f:
-                data = pickle.load(f)
+            if not os.path.exists(filepath):
+                logger.warning(f"Model file not found at {filepath}. Initializing new model.")
+                return
 
-            self.model.load_state_dict(data["model_state"])
-            self.target_model.load_state_dict(data["target_model_state"])
-            self.optimizer.load_state_dict(data["optimizer_state"])
-            self.epsilon = data["epsilon"]
-            self.memory = deque(data["memory"], maxlen=10000)
-            print(f"Model loaded from {filepath}")
+            # FIXED: Better error handling and logging
+            try:
+                checkpoint = torch.load(filepath, map_location=self.device)
+                self.model.load_state_dict(checkpoint['model_state_dict'])
+                self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
+                
+                # FIXED: Always load epsilon to maintain progress
+                if 'epsilon' in checkpoint:
+                    self.epsilon = checkpoint['epsilon']
+                    logger.info(f"✅ Loaded epsilon: {self.epsilon} from checkpoint")
+                
+                self.steps_done = checkpoint.get('steps_done', 0)
+                
+                # FIXED: Restore memory if available
+                if 'memory' in checkpoint and len(checkpoint['memory']) > 0:
+                    sample_size = min(5000, len(checkpoint['memory']))
+                    self.memory = deque(random.sample(checkpoint['memory'], sample_size), maxlen=self.memory.maxlen)
+                    
+                logger.info(f"✅ Model loaded from {filepath} - {self.steps_done} steps done, epsilon={self.epsilon}")
+            except Exception as e:
+                logger.error(f"Error during model loading: {e}", exc_info=True)
+                logger.info("Initializing fresh model due to load error")
+                
         except Exception as e:
-            print(f"Failed to load model: {e}")
+            logger.error(f"Fatal error loading model from {filepath}: {e}", exc_info=True)
 
-
-# Create a simple Flask server
-from flask import Flask, request, jsonify
-
+# ------- Flask App Setup -------
 app = Flask(__name__)
+CORS(app)
 ai_agent = None
 
-# Action mapping - tailored to your game's actions
-ACTION_MAP = {
-    0: "idle",
-    1: "move_left",
-    2: "move_right",
-    3: "jump",
-    4: "jab",
-    5: "heavy_blow",
-    6: "upper_cut",
-    7: "fireball",
-    8: "grapple",
-    9: "guard",
-    10: "dash"
-}
+# Model save path setup
+def is_colab():
+    try:
+        import google.colab
+        return True
+    except:
+        return False
 
+if is_colab():
+    print("Running in Google Colab - setting up Drive for model persistence")
+    
+    if os.path.exists('/content/drive/MyDrive'):
+        model_dir = "/content/drive/MyDrive/fighting_game_ai"
+        os.makedirs(model_dir, exist_ok=True)
+        model_save_path = os.path.join(model_dir, "new_dqn_model.pth")
+        print(f"✅ Model will be saved to: {model_save_path}")
+        
+    else:
+        print(f"❌ Not mount Google Drive")
+        model_save_path = os.path.join(os.getcwd(), "models", "dqn_model.pth")
+        print(f"Using temporary local path instead: {model_save_path}")
+else:
+    # For local runs
+    model_save_path = os.path.join(os.getcwd(), "models", "dqn_model.pth")
+    os.makedirs(os.path.dirname(model_save_path), exist_ok=True)
+
+@app.route('/status', methods=['GET'])
+def status():
+    global ai_agent
+    if ai_agent is None:
+        return jsonify({'status': 'waiting', 'message': 'Agent not initialized'}), 200
+    return jsonify({
+        'status': 'success',
+        'message': 'Agent is active.',
+        'epsilon': ai_agent.epsilon,
+        'memory_size': len(ai_agent.memory),
+        'steps_done': ai_agent.steps_done
+    })
 
 @app.route('/initialize', methods=['POST'])
 def initialize():
     global ai_agent
-    data = request.get_json()
-    state_size = data.get('state_size', 15)
-    action_size = data.get('action_size', 11)
-    model_path = data.get('model_path', None)
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data provided for initialization.'}), 400
+        
+        state_size = data.get('state_size')
+        action_size = data.get('action_size')
 
-    ai_agent = FightingGameDQN(state_size, action_size, model_path)
-    return jsonify({'success': True})
+        if state_size is None or action_size is None:
+            return jsonify({'status': 'error', 'message': 'state_size and action_size are required.'}), 400
+        if state_size != len(STATE_KEYS):
+             logger.warning(f"Client state_size {state_size} differs from server's expected {len(STATE_KEYS)}. Using server's.")
+             state_size = len(STATE_KEYS)
 
+
+        ai_agent = DQNAgent(state_size, action_size, model_path=model_save_path)
+        logger.info(f"Agent initialized with state_size={state_size}, action_size={action_size}")
+        return jsonify({'status': 'success', 'message': 'Agent initialized'})
+    except Exception as e:
+        logger.error(f"Error during initialization: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/get_action', methods=['POST'])
 def get_action():
+    global ai_agent
+    if ai_agent is None:
+        return jsonify({'status': 'error', 'message': 'Agent not initialized'}), 400
     try:
-        game_state = request.get_json()
-        action_id = ai_agent.act(game_state, training=True)
-        return jsonify({
-            'action': ACTION_MAP[action_id],
-            'action_id': action_id,
-            'success': True
-        })
-    except Exception as e:
-        return jsonify({'error': str(e), 'success': False})
+        state_dict = request.get_json(force=True) 
+        if not state_dict:
+             return jsonify({'status': 'error', 'message': 'No state_dict provided for get_action.'}), 400
 
+        action_id = ai_agent.act(state_dict, training=True)
+        if action_id not in ACTION_ID_TO_NAME:
+            error_msg = f"Invalid action_id: {action_id}"
+            logger.error(error_msg)
+            return jsonify({'status': 'error', 'message': error_msg}), 500
+        
+        action_name = ACTION_ID_TO_NAME[action_id]
+        logger.info(f"[{time.strftime('%H:%M:%S')}] ACTION: {action_name.upper()}")
+        
+        return jsonify({'status': 'success', 'action_name': action_name}) 
+    except Exception as e:
+        logger.error(f"Error in /get_action: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/train_step', methods=['POST'])
 def train_step():
+    global ai_agent
+    if ai_agent is None:
+        return jsonify({'status': 'error', 'message': 'Agent not initialized'}), 400
     try:
         data = request.get_json()
-        state = data['current_state']
-        action = data['action']
-        reward = data['reward']
-        next_state = data['next_state']
-        done = data.get('done', False)
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data provided for train_step.'}), 400
 
-        ai_agent.remember(state, action, reward, next_state, done)
-        ai_agent.replay_training()
+        reward = ai_agent.calculate_reward(data['current_state'], data['next_state'])
 
-        if done:
-            ai_agent.update_target_model()
+        if data['action'] == 0:
+            reward -= 2
 
-        if len(ai_agent.memory) % 100 == 0:
-            print(f"Training stats: Memory size={len(ai_agent.memory)}, Epsilon={ai_agent.epsilon:.4f}")
-
-        current_time = time.time()
-        if current_time - last_auto_save_time > 300:
-            save_dir = "E:/Licenta/Project/_game_prototype/dqn_script/models"
-            os.makedirs(save_dir, exist_ok=True)
-            save_path = f"{save_dir}/fighting_ai_model_auto.pkl"
-            ai_agent.save_model(save_path)
-            print(f"Auto-saved model to {save_path} (Training progress: epsilon={ai_agent.epsilon:.4f})")
-            last_auto_save_time = current_time
+        ai_agent.remember(
+            data['current_state'], 
+            data['action'],  
+            reward, 
+            data['next_state'], 
+            data['done']
+        )
         
-        return jsonify({
-            'success': True,
-            'epsilon': ai_agent.epsilon,
-            'memory_size': len(ai_agent.memory)
-        })
+        loss = ai_agent.replay_training()
+            
+        return jsonify({'status': 'success', 'message': 'trained', 'loss': loss if loss is not None else 'N/A'})
     except Exception as e:
-        return jsonify({'error': str(e), 'success': False})
+        logger.error(f"Error in train_step: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-
-@app.route('/save_model', methods=['POST'])
-def save_model():
+@app.route('/save_model_manual', methods=['POST']) 
+def save_model_manual():
+    global ai_agent
+    if ai_agent is None:
+        return jsonify({'status': 'error', 'message': 'Agent not initialized'}), 400
     try:
-        data = request.get_json()
-        filepath = data.get('filepath', 'fighting_ai_model.pkl')
-        ai_agent.save_model(filepath)
-        return jsonify({'success': True, 'message': f'Model saved to {filepath}'})
+        ai_agent.save_model(model_save_path)
+        return jsonify({'status': 'success', 'message': f'Model saved to {model_save_path}'})
     except Exception as e:
-        return jsonify({'error': str(e), 'success': False})
+        logger.error(f"Error in /save_model_manual: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
+@app.route('/training_stats', methods=['GET'])
+def training_stats():
+    global ai_agent
+    if ai_agent is None:
+        return jsonify({'status': 'error', 'message': 'Agent not initialized'}), 400
+    
+    version_info = {
+        'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+        'model_path': model_save_path,
+        'epsilon': ai_agent.epsilon,
+        'memory_size': len(ai_agent.memory),
+        'steps_done': ai_agent.steps_done,
+        'is_colab': is_colab()
+    }
+    
+    return jsonify(version_info)
+
+def run_flask():
+    port = int(os.environ.get("PORT", 5050))
+    logger.info(f"Starting Flask server on port {port}")
+    app.run(host='0.0.0.0', port=port, threaded=True)
+
+def start_cloudflare_tunnel():
+    process = subprocess.Popen(
+        ["cloudflared", "tunnel", "--url", "http://localhost:5050"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True
+    )
+    
+    tunnel_url = None
+    for _ in range(60):
+        output = process.stdout.readline().strip()
+        if output:
+            print(f"  {output}")
+            if "trycloudflare.com" in output:
+                match = re.search(r'https://[a-z0-9\-]+\.trycloudflare\.com', output)
+                if match:
+                    tunnel_url = match.group(0)
+                    break
+        time.sleep(0.1)
+    
+    if tunnel_url:
+        print(f"\nserver is at: {tunnel_url}")
+
+    return process, tunnel_url
 
 if __name__ == '__main__':
-    print("Starting AI server on http://localhost:5000")
-    print("Remember to initialize the AI first with a POST to /initialize")
-    app.run(host='localhost', port=5000, debug=False, threaded=True)
+    if os.path.exists(model_save_path):
+        print(f"Found existing model at {model_save_path}")
+    else:
+        print(f"No model exists yet at {model_save_path}, will create when saved")
+    
+    threading.Thread(target=run_flask, daemon=True).start()
+    print("Flask server started")
+
+    process, url = start_cloudflare_tunnel()
+
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        # Save model before exit
+        if ai_agent:
+            print("Saving model before exit...")
+            ai_agent.save_model(model_save_path)
+        process.terminate()
+        print("Server shut down")

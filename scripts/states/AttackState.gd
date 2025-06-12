@@ -88,9 +88,13 @@ func enter(_previous_state: String, data: Dictionary = {}) -> void:
 	attack_type = data.get("attack_type", "jab")
 	attack_data = ATTACK_PRESETS[attack_type]
 	
-	character.animation_player.play("primary_attack")
-	attack_timer = character.animation_player.get_animation("primary_attack").length
-	
+	if attack_type == "fireball":
+		character.animation_player.play("spell_cast")
+		attack_timer = character.animation_player.get_animation("spell_cast").length
+	else:
+		character.animation_player.play("primary_attack")
+		attack_timer = character.animation_player.get_animation("primary_attack").length
+
 	if attack_data.get("projectile", false):
 		# Schedule projectile spawning halfway through the animation
 		var timer = character.get_tree().create_timer(attack_timer * 0.5)
@@ -113,8 +117,9 @@ func physics_update(delta: float) -> void:
 	
 	var input_direction_x = input.get_movement_axis()
 	
-	character.velocity += character.get_gravity() * delta
-	character.move_and_slide()
+	if attack_type != "fireball":
+		character.velocity += character.get_gravity() * delta
+		character.move_and_slide()
 
 	attack_timer -= delta
 	if character.attack_recovery_timer > 0:

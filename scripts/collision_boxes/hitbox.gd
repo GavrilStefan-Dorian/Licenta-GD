@@ -37,7 +37,7 @@ func _on_area_entered(area: Area2D) -> void:
 	if target.is_guarding:
 		target_controller.state_machine.transition_to("hurt", {
 			"damage": 0,
-			"knockback": Vector2(20 * -attacker.facing_direction, 0), 
+			"knockback": Vector2(20 * attacker.facing_direction, 0), 
 			"hitstun_duration": target.GUARD_STUN_DURATION,
 			"is_guard_hit": true
 		})

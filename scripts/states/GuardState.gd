@@ -2,6 +2,7 @@ class_name GuardState
 extends State
 
 var shield_effect: Node2D
+var tween : Tween = null
 
 func enter(_previous_state: String, _data: Dictionary = {}) -> void:
     var character = get_character()
@@ -56,7 +57,7 @@ func create_shield_effect(character: CharacterBody2D) -> void:
     shield_sprite.texture = texture
     shield_sprite.position = Vector2(0, -16)  
     
-    var tween = get_character().create_tween()
+    tween = get_character().create_tween()
     tween.set_loops()
     tween.tween_property(shield_sprite, "scale", Vector2(1.1, 1.1), 0.5)
     tween.tween_property(shield_sprite, "scale", Vector2(1.0, 1.0), 0.5)
@@ -66,6 +67,9 @@ func exit():
     character.is_guarding = false
     character.is_invincible = false
     
+    tween.kill()
+    tween = null
+
     remove_shield_effect(character)
 
 func remove_shield_effect(character: CharacterBody2D) -> void:

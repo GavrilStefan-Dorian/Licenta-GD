@@ -16,7 +16,6 @@ func enter(_previous_state: String, _data: Dictionary = {}) -> void:
 			character.velocity.x = JUMP_VELOCITY_X
 		else:
 			character.velocity.x = JUMP_ARC_X * jump_direction
-		character.facing_direction = jump_direction if jump_direction != 0 else character.facing_direction
 
 func physics_update(delta: float) -> void:
 	var character = get_character()

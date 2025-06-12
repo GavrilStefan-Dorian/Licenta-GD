@@ -18,7 +18,7 @@ func add_state(name: String, state: State) -> void:
 	state.name = name
 
 func transition_to(state_name: String, data: Dictionary = {}) -> void:
-	print(str(character) + state_name)
+	# print(str(character) + state_name)
 	if not states.has(state_name):
 		push_error("State " + state_name + " does not exist")
 		return

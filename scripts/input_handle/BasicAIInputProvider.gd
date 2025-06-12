@@ -4,7 +4,7 @@ extends InputProvider
 var enemy_node: CharacterBody2D
 var player_node: CharacterBody2D
 
-var attack_range: float = 100.0      
+var attack_range: float = 500.0      
 var sight_range: float = 600.0        
 var move_speed_factor: float = 0.7    
 
@@ -48,7 +48,7 @@ func update_ai(delta: float):
 
     if distance_to_player <= attack_range:
         if current_attack_cooldown <= 0:
-            _current_actions["jab"] = true 
+            _current_actions["fireball"] = true 
             current_attack_cooldown = attack_cooldown
         else:
             _current_input_direction_x = 0.0 

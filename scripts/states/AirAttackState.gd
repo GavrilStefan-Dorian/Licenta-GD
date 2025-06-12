@@ -28,7 +28,7 @@ var AIR_ATTACK_PRESETS = {
 		"hitstun": 0.5,
 		"guard_break": true,
 		"hitbox_size": Vector2(50, 80),
-		"hitbox_offset": Vector2(-5, -20)
+		"hitbox_offset": Vector2(5, -20)
 	}
 }
 
