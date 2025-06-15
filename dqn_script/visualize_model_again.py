@@ -59,4 +59,4 @@ def visualize_saved_model(model_path):
     except Exception as e:
         print(f"Error visualizing model: {e}")
 
-visualize_saved_model("E:\\Licenta\\Project\\_game_prototype\\dqn_script\\new_dqn_model.pth")
+visualize_saved_model("E:\\Licenta\\Project\\_game_prototype\\dqn_script\\dqn_model_newer (1).pth")

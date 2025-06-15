@@ -5,10 +5,10 @@ var http_request: HTTPRequest
 var train_http_request: HTTPRequest
 var waiting_for_train: bool = false
 
-var ai_server_url = "https://runner-compromise-sales-all.trycloudflare.com/"
+var ai_server_url = "https://mounted-az-villas-found.trycloudflare.com/"
 var waiting_for_action = false
 var connection_retry_count = 0
-var max_retries = 3
+var max_retries = 5
 var request_in_progress = false
 
 var current_action: String = "idle"
@@ -43,88 +43,158 @@ var prev_action_states := {
 	"move_right": false,
 }
 
-var previous_action: String = "idle" #
+var previous_action: String = "idle"
 
+# Improved queue system
 var get_action_queue: Array = []
 var train_queue: Array = []
+var processing_get_action = false
+var processing_train = false
 
 var last_executed_action: String = "idle"
+
+# Add connection state tracking
+var connection_established = false
+var last_successful_request_time = 0.0
+
+# Add node validity tracking
+var nodes_valid = true
 
 func _init(char_node: CharacterBody2D, opponent_node: CharacterBody2D):
 	character = char_node
 	opponent = opponent_node
 
+	# Setup main HTTP request
 	http_request = HTTPRequest.new()
 	character.add_child(http_request)
 	http_request.request_completed.connect(_on_action_request_completed)
-	http_request.timeout = 5.0
-	http_request.set_tls_options(TLSOptions.client())
-
-	http_request.use_threads = true
+	http_request.timeout = 10.0  # Reduced timeout
+	http_request.use_threads = false  # Disable threading to prevent freezing
+	
+	# Setup training HTTP request
 	train_http_request = HTTPRequest.new()
 	character.add_child(train_http_request)
 	train_http_request.request_completed.connect(_on_train_request_completed)
-	train_http_request.timeout = 5.0
-	train_http_request.use_threads = true
-	train_http_request.set_tls_options(TLSOptions.client())
+	train_http_request.timeout = 10.0  # Reduced timeout
+	train_http_request.use_threads = false  # Disable threading to prevent freezing
+	
+	# Start connection check
 	check_server_status()
 
-func _send_generic_request(request_node: HTTPRequest, endpoint: String, data: Dictionary, context: String):
+func _send_request_simple(request_node: HTTPRequest, endpoint: String, data: Dictionary) -> bool:
+	# Check if nodes are still valid before making request
+	if not _validate_nodes():
+		return false
+		
+	# Check if request node is available
 	if request_node.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
-		if context.find("get_action") != -1:
-			get_action_queue.append({ "endpoint": endpoint, "data": data, "context": context })
-		elif context.find("train_step") != -1:
-			train_queue.append({ "endpoint": endpoint, "data": data, "context": context })
-		else:
-			printerr("No queue defined for context: %s" % context)
-		return
+		return false
 	
 	var json_string = JSON.stringify(data)
 	var headers = [
 		"Content-Type: application/json",
+		"User-Agent: Godot/4.0",
+		"Accept: application/json"
 	]
-	var error = request_node.request(ai_server_url + endpoint.lstrip("/"), headers, HTTPClient.METHOD_POST, json_string)
+	
+	var full_url = ai_server_url.rstrip("/") + "/" + endpoint.lstrip("/")
+	
+	var error = request_node.request(full_url, headers, HTTPClient.METHOD_POST, json_string)
+	
 	if error != OK:
-		printerr("Failed to start HTTP request for %s. Error: %s" % [context, error])
+		printerr("Failed to start HTTP request for %s. Error: %s" % [endpoint, error])
+		return false
+	
+	return true
+
+func _validate_nodes() -> bool:
+	if not is_instance_valid(character) or not is_instance_valid(opponent):
+		nodes_valid = false
+		return false
+	
+	if not character.is_inside_tree() or not opponent.is_inside_tree():
+		nodes_valid = false
+		return false
+		
+	nodes_valid = true
+	return true
 
 func initialize_agent():
+	if not _validate_nodes():
+		return
+		
 	var init_data = {
 		"state_size": get_current_game_state().size(),
 		"action_size": ACTION_NAME_TO_ID.size()
 	}
-	_send_generic_request(http_request, "/initialize", init_data, "initialize")
-
+	
+	if _send_request_simple(http_request, "/initialize", init_data):
+		print("Initialization request sent")
+	else:
+		print("Failed to send initialization request")
 
 func check_server_status():
-	if not is_instance_valid(character): return
-	var status_request_node = HTTPRequest.new() # temporary, for status check
+	if not _validate_nodes():
+		return
+		
+	var status_request_node = HTTPRequest.new()
 	character.add_child(status_request_node)
 	status_request_node.request_completed.connect(_on_status_check_completed.bind(status_request_node))
-	status_request_node.set_tls_options(TLSOptions.client())
-	status_request_node.request(ai_server_url + "status", [], HTTPClient.METHOD_GET)
+	status_request_node.timeout = 8.0
+	status_request_node.use_threads = false
+	
+	var full_url = ai_server_url.rstrip("/") + "/status"
+	print("Checking server status at: %s" % full_url)
+	
+	var error = status_request_node.request(full_url, [], HTTPClient.METHOD_GET)
+	if error != OK:
+		printerr("Failed to start status check request. Error: %s" % error)
+		if is_instance_valid(status_request_node):
+			status_request_node.queue_free()
 
 func _on_status_check_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray, request_node: HTTPRequest):
 	if is_instance_valid(request_node):
 		request_node.queue_free()
 
+	print("Status check - Result: %s, Code: %s" % [result, response_code])
+	
 	if result == HTTPRequest.RESULT_SUCCESS and response_code == 200:
 		print("AI Server status OK. Initializing agent")
+		connection_established = true
+		last_successful_request_time = Time.get_time_dict_from_system().hour * 3600 + Time.get_time_dict_from_system().minute * 60 + Time.get_time_dict_from_system().second
 		initialize_agent()
 	else:
-		printerr("Status check failed. Result: %s, Code: %s" % [result, response_code])
+		connection_established = false
+		var error_msg = ""
+		match result:
+			HTTPRequest.RESULT_CANT_CONNECT:
+				error_msg = "Can't connect to server"
+			HTTPRequest.RESULT_TIMEOUT:
+				error_msg = "Connection timeout"
+			HTTPRequest.RESULT_TLS_HANDSHAKE_ERROR:
+				error_msg = "TLS handshake failed"
+			HTTPRequest.RESULT_NO_RESPONSE:
+				error_msg = "No response from server"
+			HTTPRequest.RESULT_REQUEST_FAILED:
+				error_msg = "Request failed"
+			_:
+				error_msg = "Unknown error"
+		
+		print("Status check failed: %s (Result: %s, Code: %s)" % [error_msg, result, response_code])
+		
+		# Simple retry without await to prevent freezing
 		connection_retry_count += 1
 		if connection_retry_count < max_retries:
-			print("Retrying server status check in 2 seconds")
-			if is_instance_valid(character) and character.is_inside_tree():
-				await character.get_tree().create_timer(2.0).timeout
-				check_server_status()
-			else:
-				printerr("Character not in tree")
+			print("Will retry server status check (attempt %d/%d)" % [connection_retry_count, max_retries])
+			# Use a timer instead of await
+			if _validate_nodes():
+				var retry_timer = character.get_tree().create_timer(2.0)
+				retry_timer.timeout.connect(check_server_status)
 		else:
-			printerr("AI server connection failed")
+			printerr("AI server connection failed after %d attempts" % max_retries)
 
 func update_ai(delta: float):
-	if ai_paused or not ai_initialized:
+	if ai_paused or not ai_initialized or not connection_established or not _validate_nodes():
 		return
 
 	if action_timer > 0:
@@ -134,33 +204,39 @@ func update_ai(delta: float):
 
 	time_since_last_action += delta
 	
+	# Process queued requests
+	_process_queued_requests()
+	
 	if time_since_last_action >= 0.8: 
 		var current_game_state = get_current_game_state()
 		
-		if not previous_state.is_empty():
-			if not waiting_for_train and train_http_request.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-				var done = current_game_state.get("my_health", 0.0) <= 0 or current_game_state.get("enemy_health", 0.0) <= 0
-				var action_id = ACTION_NAME_TO_ID.get(last_executed_action, 0)  # Use last executed action
-				var train_data = {
-					"current_state": previous_state,
-					"action": action_id,
-					"next_state": current_game_state,
-					"done": done
-				}
-				waiting_for_train = true
-				_send_generic_request(train_http_request, "/train_step", train_data, "train_step")
-			# else:
-				# printerr("Train HTTPRequest busy, skipping train_step request.")
+		# Handle training
+		if not previous_state.is_empty() and not processing_train:
+			var done = current_game_state.get("my_health", 0.0) <= 0 or current_game_state.get("enemy_health", 0.0) <= 0
+			var action_id = ACTION_NAME_TO_ID.get(last_executed_action, 0)
+			var train_data = {
+				"current_state": previous_state,
+				"action": action_id,
+				"next_state": current_game_state,
+				"done": done
+			}
+			
+			if _send_request_simple(train_http_request, "/train_step", train_data):
+				processing_train = true
+			else:
+				train_queue.append({ "endpoint": "/train_step", "data": train_data, "context": "train_step" })
 		
 		previous_state = current_game_state.duplicate(true)
 		
-		if not waiting_for_action and http_request.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-			waiting_for_action = true
-			_send_generic_request(http_request, "/get_action", current_game_state, "get_action")
-			time_since_last_action = 0.0
-		else:
-			pass
+		# Handle action requests
+		if not processing_get_action:
+			if _send_request_simple(http_request, "/get_action", current_game_state):
+				processing_get_action = true
+				time_since_last_action = 0.0
+			else:
+				get_action_queue.append({ "endpoint": "/get_action", "data": current_game_state, "context": "get_action" })
 
+	# Update action states
 	for action in action_states.keys():
 		prev_action_states[action] = action_states[action]
 		action_states[action] = (current_action == action)
@@ -171,6 +247,22 @@ func update_ai(delta: float):
 		if current_action in ["guard", "move_left", "move_right"] and previous_action != current_action:
 			_on_continuous_action_started(current_action)
 	previous_action = current_action
+
+func _process_queued_requests():
+	if not _validate_nodes():
+		return
+		
+	# Process get_action queue
+	if not get_action_queue.is_empty() and not processing_get_action:
+		var req_data = get_action_queue.pop_front()
+		if _send_request_simple(http_request, req_data.endpoint, req_data.data):
+			processing_get_action = true
+	
+	# Process train queue
+	if not train_queue.is_empty() and not processing_train:
+		var req_data = train_queue.pop_front()
+		if _send_request_simple(train_http_request, req_data.endpoint, req_data.data):
+			processing_train = true
 
 func _on_continuous_action_started(action: String):
 	print("%s started" % action)
@@ -186,6 +278,10 @@ func get_movement_axis() -> float:
 	return 0.0
 
 func is_action_pressed(action: String) -> bool:
+	# Always validate nodes before accessing character properties
+	if not _validate_nodes():
+		return false
+		
 	if action_states.has(action):
 		return action_states[action]
 	match action:
@@ -199,12 +295,18 @@ func is_action_pressed(action: String) -> bool:
 		_: return false
 
 func is_action_just_pressed(action: String) -> bool:
+	if not _validate_nodes():
+		return false
 	return action_states.has(action) and action_states[action] and not prev_action_states[action]
 
 func is_action_just_released(action: String) -> bool:
+	if not _validate_nodes():
+		return false
 	return action_states.has(action) and not action_states[action] and prev_action_states[action]
 
 func is_action_released(action: String) -> bool:
+	if not _validate_nodes():
+		return false
 	if action == "guard":
 		return action_states.has("guard") and not action_states["guard"] and prev_action_states["guard"]
 	return false
@@ -216,8 +318,7 @@ func get_current_action() -> String:
 	return current_action
 
 func get_current_game_state() -> Dictionary:
-	if not is_instance_valid(character) or not is_instance_valid(opponent):
-		printerr("Character or Opponent node invalid")
+	if not _validate_nodes():
 		return {}
 
 	var dist_x = abs(character.position.x - opponent.position.x)
@@ -261,44 +362,29 @@ func get_current_game_state() -> Dictionary:
 		"time_since_last_action": float(time_since_last_action)
 	}
 
-func _process_next_get_action_request():
-	if get_action_queue.is_empty():
-		return
-	if http_request.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-		var req_data = get_action_queue.pop_front()
-		_send_generic_request(http_request, req_data.endpoint, req_data.data, req_data.context)
-
-func _process_next_train_request():
-	if train_queue.is_empty():
-		return
-	if train_http_request.get_http_client_status() == HTTPClient.STATUS_DISCONNECTED:
-		var req_data = train_queue.pop_front()
-		_send_generic_request(train_http_request, req_data.endpoint, req_data.data, req_data.context)
-
-
 func _on_action_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-	waiting_for_action = false
+	processing_get_action = false
+	
+	# Check if we should still process this response
+	if ai_paused or not _validate_nodes():
+		print("Ignoring action response - AI paused or nodes invalid")
+		return
 	
 	if result != HTTPRequest.RESULT_SUCCESS:
-		printerr("Action request failed with result: %s" % result)
-		_process_next_get_action_request()
+		print("Action request failed with result: %s" % result)
+		if result == HTTPRequest.RESULT_TLS_HANDSHAKE_ERROR:
+			connection_established = false
 		return
 	
 	var response_body_text = body.get_string_from_utf8().strip_edges()
-	var endpoint_context = "get_action"
 	
 	if response_body_text == "":
-		printerr("Empty response body received in get_action. Context: %s" % endpoint_context)
-		_process_next_get_action_request()
+		printerr("Empty response body received in get_action")
 		return
 	
-	var json_response
-	var parse_error = false
-	
-	json_response = JSON.parse_string(response_body_text)
+	var json_response = JSON.parse_string(response_body_text)
 	if json_response == null:
-		printerr("Failed to parse JSON response for Action/Init. Body: <<< %s >>>. Context: %s" % [response_body_text, endpoint_context])
-		_process_next_get_action_request()
+		printerr("Failed to parse JSON response: %s" % response_body_text)
 		return
 	
 	if response_code == 200 and typeof(json_response) == TYPE_DICTIONARY:
@@ -306,47 +392,52 @@ func _on_action_request_completed(result: int, response_code: int, headers: Pack
 		if response_data.get("status") == "success":
 			if response_data.has("action_name"):
 				current_action = response_data["action_name"]
-				last_executed_action = current_action  # Store it immediately
+				last_executed_action = current_action
 				action_timer = action_duration
 				time_since_last_action = 0
-				print("%s - Received /get_action: %s" % [get_formatted_datetime(), response_body_text])
+				print("%s - Received action: %s" % [get_formatted_datetime(), current_action])
+				last_successful_request_time = Time.get_time_dict_from_system().hour * 3600 + Time.get_time_dict_from_system().minute * 60 + Time.get_time_dict_from_system().second
 			elif response_data.has("message") and response_data["message"] == "Agent initialized":
-				print("%s - AI Agent initialized successfully on server." % get_formatted_datetime())
+				print("%s - AI Agent initialized successfully" % get_formatted_datetime())
 				ai_initialized = true
 		else:
-			printerr("Action/Init server returned error: %s. Context: %s" % [response_data.get("message", "Unknown error"), endpoint_context])
+			printerr("Server returned error: %s" % response_data.get("message", "Unknown error"))
 	else:
-		printerr("Action/Init request completed with code: %s. Body: %s. Context: %s" % [response_code, response_body_text, endpoint_context])
-	
-	_process_next_get_action_request()
+		printerr("Action request failed - Code: %s, Body: %s" % [response_code, response_body_text])
 
 func _on_train_request_completed(result: int, response_code: int, headers: PackedStringArray, body: PackedByteArray):
-	waiting_for_train = false
+	processing_train = false
+	
 	if result != HTTPRequest.RESULT_SUCCESS:
-		printerr("Train request failed or timed out. Result: %s" % result)
-		_process_next_train_request()
+		print("Train request failed with result: %s" % result)
 		return
 	
-	var response_body_text = body.get_string_from_utf8()
-	if response_body_text.is_empty() and response_code != 204:
-		printerr("Received empty response body for Train request (Code: %s)." % response_code)
-		_process_next_train_request()
-		return
-	
-	_process_next_train_request()
+	# Training requests don't need detailed response handling
+	if response_code != 200:
+		print("Train request failed with code: %s" % response_code)
 
 func pause_ai():
 	ai_paused = true
 	print("AI Paused")
+	# Clear all state
 	get_action_queue.clear()
 	train_queue.clear()
-	waiting_for_action = false
-	waiting_for_train = false
+	processing_get_action = false
+	processing_train = false
+	current_action = "idle"
+	action_timer = 0.0
+	
+	# Cancel any ongoing requests by setting a flag
+	# The response handlers will check this flag
 
 func resume_ai():
 	ai_paused = false
 	previous_state.clear()
 	time_since_last_action = 0.25
+	current_action = "idle"
+	action_timer = 0.0
+	processing_get_action = false
+	processing_train = false
 	print("AI Resumed")
 
 func get_formatted_datetime() -> String:

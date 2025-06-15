@@ -13,11 +13,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-# Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- DQN Model and Agent ---
 STATE_KEYS = [
     "my_health", "enemy_health", "my_position_x", "my_position_y", "enemy_position_x", "enemy_position_y",
     "normalized_distance", "relative_position", "my_on_ground", "enemy_on_ground", "my_is_attacking", 
@@ -25,7 +23,6 @@ STATE_KEYS = [
     "time_since_last_action"
 ]
 
-# Action mapping: ID to Name
 ACTION_ID_TO_NAME = {
     0: "idle", 1: "move_left", 2: "move_right", 3: "jump", 4: "jab", 5: "heavy_blow", 
     6: "upper_cut", 7: "fireball", 8: "grapple", 9: "guard", 10: "dash"
@@ -60,10 +57,10 @@ class DQNAgent:
         self.state_size = state_size
         self.action_size = action_size
         self.memory = deque(maxlen=20000)
-        self.gamma = 0.99  # Discount rate
-        self.epsilon = 1.0  # Exploration rate
+        self.gamma = 0.99  
+        self.epsilon = 1.0  
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995  # FIXED: Faster decay to see results quickly
+        self.epsilon_decay = 0.995  
         self.learning_rate = 0.0005
         self.batch_size = 64
         self.update_target_every = 10
@@ -76,10 +73,9 @@ class DQNAgent:
         self.optimizer = optim.AdamW(self.model.parameters(), lr=self.learning_rate)
         self.criterion = nn.SmoothL1Loss()
 
-        # FIXED: Add better model file checking
         if model_path:
             if os.path.exists(model_path):
-                logger.info(f"Found existing model at {model_path}, loading it...")
+                logger.info(f"Found existing model at {model_path}, loadding")
                 self.load_model(model_path)
             else:
                 logger.info(f"No model found at {model_path}, starting fresh")
@@ -125,7 +121,6 @@ class DQNAgent:
         logger.info("Target model updated.")
 
     def remember(self, state, action, reward, next_state, done):
-        # State should be a list/numpy array of floats/booleans
         self.memory.append((
             self._process_state_to_list(state), 
                             action, reward, 
@@ -134,13 +129,12 @@ class DQNAgent:
         ))
 
     def _process_state_to_list(self, state_dict_or_list):
-        if isinstance(state_dict_or_list, list): # Already processed
+        if isinstance(state_dict_or_list, list): 
             return state_dict_or_list
         if not isinstance(state_dict_or_list, dict):
             logger.error(f"Invalid state format: {state_dict_or_list}. Expected dict.")
-            return [0.0] * self.state_size # Return a default state vector
+            return [0.0] * self.state_size 
 
-        # Convert dictionary to a list of floats in the correct order
         processed_state = []
         for key in STATE_KEYS:
             value = state_dict_or_list.get(key)
@@ -154,30 +148,29 @@ class DQNAgent:
         
         if len(processed_state) != self.state_size:
              logger.error(f"State size mismatch. Expected {self.state_size}, got {len(processed_state)} for state: {state_dict_or_list}")
-             # Pad or truncate if necessary, or handle error more strictly
              processed_state = (processed_state + [0.0] * self.state_size)[:self.state_size]
         return processed_state
 
 
-    def act(self, state_dict, training=True): # state_dict is the raw dict from Godot
+    def act(self, state_dict, training=True): # state_dict is raw dict from Godot
         self.steps_done +=1
         if training and random.random() <= self.epsilon:
-            return random.randrange(self.action_size) # Return action ID
+            return random.randrange(self.action_size) 
         
         state_list = self._process_state_to_list(state_dict)
         state_tensor = torch.tensor([state_list], dtype=torch.float32).to(self.device)
         
-        self.model.eval() # Set model to evaluation mode
+        self.model.eval() 
         with torch.no_grad():
             action_values = self.model(state_tensor)
-        if training: # Set back to train mode if it was training
+        if training: 
             self.model.train()
             
-        return torch.argmax(action_values).item() # Return action ID
+        return torch.argmax(action_values).item() 
 
     def replay_training(self):
         if len(self.memory) < self.batch_size:
-            return 0.0 # Not enough samples for a batch
+            return 0.0 # Not enough samples
 
         minibatch = random.sample(self.memory, self.batch_size)
         
@@ -187,30 +180,23 @@ class DQNAgent:
         next_states = torch.tensor([s[3] for s in minibatch], dtype=torch.float32).to(self.device)
         dones = torch.tensor([s[4] for s in minibatch], dtype=torch.bool).to(self.device)
 
-        # Get Q values for current states from the online model
         current_q_values = self.model(states).gather(1, actions).squeeze(1)
 
-        # Get max Q values for next states from the target model
         with torch.no_grad():
             next_q_values_target = self.target_model(next_states).max(1)[0]
         
-        # Compute the expected Q values (Bellman equation)
         expected_q_values = rewards + (self.gamma * next_q_values_target * (~dones))
 
-        # Compute loss
         loss = self.criterion(current_q_values, expected_q_values)
 
-        # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0) # Gradient clipping
         self.optimizer.step()
 
-        # Decay epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
         
-        # Update target network
         if self.steps_done % self.update_target_every == 0:
             self.update_target_model()
             
@@ -218,10 +204,8 @@ class DQNAgent:
 
     def save_model(self, filepath):
         try:
-            # Create directory if it doesn't exist
             os.makedirs(os.path.dirname(filepath), exist_ok=True)
             
-            # FIXED: Save with more detailed info
             save_data = {
                 'model_state_dict': self.model.state_dict(),
                 'target_model_state_dict': self.target_model.state_dict(),
@@ -232,14 +216,12 @@ class DQNAgent:
                 'save_time': time.time()
             }
             
-            # FIXED: Ensure drive is mounted by testing write
             torch.save(save_data, filepath)
             
-            # Verify the save worked
             if os.path.exists(filepath):
-                logger.info(f"✅ Model saved to {filepath} - File size: {os.path.getsize(filepath)} bytes")
+                logger.info(f"Model is at {filepath} - File size: {os.path.getsize(filepath)} bytes")
             else:
-                logger.error(f"❌ Model save failed - File not created at {filepath}")
+                logger.error(f"Model save failed - File not created at {filepath}")
                 
         except Exception as e:
             logger.error(f"Error saving model: {e}", exc_info=True)
@@ -247,28 +229,25 @@ class DQNAgent:
     def load_model(self, filepath):
         try:
             if not os.path.exists(filepath):
-                logger.warning(f"Model file not found at {filepath}. Initializing new model.")
+                logger.warning(f"Model file not found at {filepath}. Make new model.")
                 return
 
-            # FIXED: Better error handling and logging
             try:
                 checkpoint = torch.load(filepath, map_location=self.device)
                 self.model.load_state_dict(checkpoint['model_state_dict'])
                 self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
                 
-                # FIXED: Always load epsilon to maintain progress
                 if 'epsilon' in checkpoint:
                     self.epsilon = checkpoint['epsilon']
-                    logger.info(f"✅ Loaded epsilon: {self.epsilon} from checkpoint")
+                    logger.info(f"Loaded epsilon: {self.epsilon} from checkpoint")
                 
                 self.steps_done = checkpoint.get('steps_done', 0)
                 
-                # FIXED: Restore memory if available
                 if 'memory' in checkpoint and len(checkpoint['memory']) > 0:
                     sample_size = min(5000, len(checkpoint['memory']))
                     self.memory = deque(random.sample(checkpoint['memory'], sample_size), maxlen=self.memory.maxlen)
                     
-                logger.info(f"✅ Model loaded from {filepath} - {self.steps_done} steps done, epsilon={self.epsilon}")
+                logger.info(f"Model loaded from {filepath} - {self.steps_done} steps done, epsilon={self.epsilon}")
             except Exception as e:
                 logger.error(f"Error during model loading: {e}", exc_info=True)
                 logger.info("Initializing fresh model due to load error")
@@ -276,12 +255,10 @@ class DQNAgent:
         except Exception as e:
             logger.error(f"Fatal error loading model from {filepath}: {e}", exc_info=True)
 
-# ------- Flask App Setup -------
 app = Flask(__name__)
 CORS(app)
 ai_agent = None
 
-# Model save path setup
 def is_colab():
     try:
         import google.colab
@@ -296,12 +273,12 @@ if is_colab():
         model_dir = "/content/drive/MyDrive/fighting_game_ai"
         os.makedirs(model_dir, exist_ok=True)
         model_save_path = os.path.join(model_dir, "new_dqn_model.pth")
-        print(f"✅ Model will be saved to: {model_save_path}")
+        print(f"Model will be saved to: {model_save_path}")
         
     else:
-        print(f"❌ Not mount Google Drive")
+        print(f"Not mount Google Drive")
         model_save_path = os.path.join(os.getcwd(), "models", "dqn_model.pth")
-        print(f"Using temporary local path instead: {model_save_path}")
+        print(f"Instead, temporary local path: {model_save_path}")
 else:
     # For local runs
     model_save_path = os.path.join(os.getcwd(), "models", "dqn_model.pth")
@@ -462,7 +439,7 @@ if __name__ == '__main__':
     if os.path.exists(model_save_path):
         print(f"Found existing model at {model_save_path}")
     else:
-        print(f"No model exists yet at {model_save_path}, will create when saved")
+        print(f"No model exists yet at {model_save_path}, create after saving")
     
     threading.Thread(target=run_flask, daemon=True).start()
     print("Flask server started")
@@ -473,9 +450,8 @@ if __name__ == '__main__':
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        # Save model before exit
         if ai_agent:
-            print("Saving model before exit...")
+            print("Saving model before exit")
             ai_agent.save_model(model_save_path)
         process.terminate()
         print("Server shut down")

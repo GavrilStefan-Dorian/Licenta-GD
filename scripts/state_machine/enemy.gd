@@ -47,7 +47,6 @@ func _ready():
     add_to_group("enemies")
 
     Globals.register_enemy(self)
-    
     if animation_player and animation_player.animation_finished.is_connected(_on_anim_finished):
         animation_player.animation_finished.disconnect(_on_anim_finished)
     if animation_player:
